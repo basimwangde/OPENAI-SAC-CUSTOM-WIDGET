@@ -278,7 +278,7 @@
         composed: true
      }));
       this._setDirty(false);
-      this._toast('Reverted');
+      this._update();
     }
 
     _toast(msg) {
