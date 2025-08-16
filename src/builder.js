@@ -64,15 +64,15 @@
 
       const onChange = () => this._emit();
       this.inputs.forEach(el => el.addEventListener('change', onChange));
-      this.inputs.forEach(el => el.addEventListener('input',  onChange)); // more responsive
+      this.inputs.forEach(el => el.addEventListener('input',  onChange)); // live updates
     }
 
-    // Called by SAC when opening the builder (initial load)
+    // Called by SAC when the builder opens (initial load)
     onCustomWidgetBuilderInit(host) {
       this._apply(host && host.properties);
     }
 
-    // Called by SAC if properties change from outside while builder is open
+    // Called if properties change from outside while builder is open
     onCustomWidgetAfterUpdate(changedProps) {
       this._apply(changedProps);
     }
