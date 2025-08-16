@@ -131,11 +131,11 @@
       b.textContent = text;
       // style bubbles against theme
       if (role === 'user') {
-        b.style.background = '#ffffff';
+        b.style.background = '#97cdf2ff';
         b.style.border = '1px solid #e7eaf0';
         b.style.color = this._props.textColor || '#0b1221';
       } else {
-        b.style.background = '#73bcedff';
+        b.style.background = '#ffffff';
         b.style.border = '1px solid #e7eaf0';
         b.style.color = this._props.textColor || '#0b1221';
       }
