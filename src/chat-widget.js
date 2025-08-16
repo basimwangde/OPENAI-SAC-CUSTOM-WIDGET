@@ -96,6 +96,13 @@
       }
     }
 
+    onCustomWidgetBeforeUpdate(changedProps) {
+      if (changedProps.dataBinding && changedProps.dataBinding.data) {
+        this._boundRows = changedProps.dataBinding.data;
+      }
+    }
+
+
     onCustomWidgetAfterUpdate(changedProps = {}) {
       Object.assign(this._props, changedProps);
       this._applyTheme();
