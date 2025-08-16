@@ -89,6 +89,36 @@
       };
       this._boundRows = []; // <-- holds data from myData binding (DB variant)
       this._schema    = [];   // column keys after flattening
+
+      window.addEventListener('percibot-config-broadcast', (e) => {
+      const detail = e && e.detail;
+      if (!detail) return;
+
+      const inboundLink = (detail.linkId || '').trim();
+      const myLink      = (this._props.linkId || '').trim();
+      if (!inboundLink || !myLink || inboundLink !== myLink) return;
+
+      // Apply config from the Config widget to this instance
+      const incomingProps = detail.props || {};
+      // Optional: restrict which keys can be overridden
+      const safe = {
+        apiKey: incomingProps.apiKey,
+        model: incomingProps.model,
+        systemPrompt: incomingProps.systemPrompt,
+        welcomeText: incomingProps.welcomeText,
+        primaryColor: incomingProps.primaryColor,
+        primaryDark: incomingProps.primaryDark,
+        surfaceColor: incomingProps.surfaceColor,
+        surfaceAlt: incomingProps.surfaceAlt,
+        textColor: incomingProps.textColor,
+        linkId: incomingProps.linkId
+      };
+      this.setProperties(safe);
+
+      // Subtle UX hint so you know the hand-shake happened
+      try { this.$modelChip.textContent += ' · Linked✔'; } catch(_) {}
+    });
+
     }
 
     connectedCallback() {
