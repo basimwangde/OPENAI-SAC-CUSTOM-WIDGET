@@ -156,10 +156,19 @@
 
     onCustomWidgetAfterUpdate(changedProps = {}) {
       Object.assign(this._props, changedProps);
+
+      if (changedProps.linkId) {
+      this._props.linkId = changedProps.linkId;
+      if (this.dataBinding && this.dataBinding.data && this.dataBinding.data.length) {
+        this.boundRows = this.dataBinding.data; // available rows from linked widget
+      }
+}
       this._applyTheme();
       // this.$modelChip.textContent = this._props.model || '';
           // If the DB variant is used, SAC passes our binding by its id ("myData")
           this._isDB = !!changedProps.myData;
+
+          
     if (this._isDB) {
       const flat = this._flattenBindingRows(changedProps.myData) || [];
       if (flat.length) {
