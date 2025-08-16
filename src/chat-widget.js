@@ -52,7 +52,7 @@
 
       <div class="footer">
         <div class="muted" id="hint"></div>
-        <div class="muted">Percipere Consulting</div>
+        <div class="muted"><a href="www.percipere.co">Percipere Consulting</a></div>
       </div>
     </div>
   `;
@@ -100,7 +100,7 @@
       this._applyTheme();
       // this.$modelChip.textContent = this._props.model || '';
       this.$modelChip.textContent = 'AI Assistant';
-      this.$hint.textContent = this._props.apiKey ? 'Ready' : 'API key not set – open Builder to configure';
+      this.$hint.textContent = this._props.apiKey ? '' : 'API key not set – open Builder to configure';
       // if Builder changed welcome text and chat is empty, show it
       if (!this.$chat.innerHTML && this._props.welcomeText) {
         this._append('bot', this._props.welcomeText);
@@ -135,7 +135,7 @@
         b.style.border = '1px solid #e7eaf0';
         b.style.color = this._props.textColor || '#0b1221';
       } else {
-        b.style.background = '#ffffff';
+        b.style.background = '#73bcedff';
         b.style.border = '1px solid #e7eaf0';
         b.style.color = this._props.textColor || '#0b1221';
       }
