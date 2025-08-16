@@ -34,7 +34,7 @@
     </style>
     <div class="wrap">
       <header>
-        <div class="brand">PerciBot</div>
+        <div class="brand">PerciBOT</div>
         <div class="chip" id="modelChip"></div>
       </header>
 
@@ -42,7 +42,7 @@
         <div class="panel" id="chat"></div>
 
         <div class="inputRow">
-          <textarea id="input" placeholder="Ask anything about your analytics…"></textarea>
+          <input id="input" placeholder="Ask anything about your analytics…">
           <div style="display:flex; flex-direction:column; gap:8px;">
             <button id="send" class="primary">Send</button>
             <button id="clear">Clear</button>
@@ -52,7 +52,7 @@
 
       <div class="footer">
         <div class="muted" id="hint"></div>
-        <div class="muted">v2</div>
+        <div class="muted">Percipere Consulting</div>
       </div>
     </div>
   `;
