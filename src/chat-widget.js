@@ -84,9 +84,11 @@
         primaryDark:  '#163a8a',
         surfaceColor: '#ffffff',
         surfaceAlt:   '#f6f8ff',
-        textColor:    '#0b1221'
+        textColor:    '#0b1221',
+        linkId: ''
       };
       this._boundRows = []; // <-- holds data from myData binding (DB variant)
+      this._schema    = [];   // column keys after flattening
     }
 
     connectedCallback() {
@@ -102,19 +104,45 @@
       }
     }
 
+   // helper: flatten SAC binding rows (dimension.label, measure.raw)
+    _flattenBindingRows(binding) {
+      if (!binding || !Array.isArray(binding.data)) return [];
+      return binding.data.map(row => {
+        const o = {};
+        Object.keys(row).forEach(k => {
+          const v = row[k];
+          if (v && typeof v === 'object') {
+            if ('raw' in v)   o[k] = v.raw;   // measures
+            else if ('label' in v) o[k] = v.label; // dimensions
+            else o[k] = String(v);
+          } else {
+            o[k] = v;
+          }
+        });
+        return o;
+      });
+    }
+
 
     onCustomWidgetAfterUpdate(changedProps = {}) {
       Object.assign(this._props, changedProps);
       this._applyTheme();
       // this.$modelChip.textContent = this._props.model || '';
-      // If data binding is present, show bound-row count; else show generic label
-      const rows = (changedProps.myData && changedProps.myData.data) ? changedProps.myData.data : null;
-      if (rows && Array.isArray(rows)) {
-      this._boundRows = rows;
-      this.$modelChip.textContent = `Bound: ${rows.length} row(s)`;
+          // If the DB variant is used, SAC passes our binding by its id ("myData")
+          this._isDB = !!changedProps.myData;
+    if (this._isDB) {
+      const flat = this._flattenBindingRows(changedProps.myData) || [];
+      if (flat.length) {
+        this._boundRows = flat;
+        this._schema = Object.keys(flat[0]);
+        this.$modelChip.textContent = `Bound: ${flat.length} row(s)`;
       } else {
-      this.$modelChip.textContent = 'AI Assistant';
+        this._boundRows = [];
+        this.$modelChip.textContent = 'AI Assistant';
       }
+    } else {
+      this.$modelChip.textContent = 'AI Assistant';
+    }
       this.$hint.textContent = this._props.apiKey ? '' : 'API key not set – open Builder to configure';
       // if Builder changed welcome text and chat is empty, show it
       if (!this.$chat.innerHTML && this._props.welcomeText) {
@@ -124,6 +152,9 @@
       }
       }
     }
+  // (optional) expose a getter if you’ll read it from app scripting later
+    getBoundData() { return { schema: this._schema, rows: this._boundRows }; }
+
 
     setProperties(props) { this.onCustomWidgetAfterUpdate(props); } // older runtimes
 

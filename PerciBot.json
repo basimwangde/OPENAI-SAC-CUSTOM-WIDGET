@@ -24,7 +24,6 @@
       "ignoreIntegrity": true
     }
   ],
-
   "properties": {
     "width":        { "type": "integer", "default": 1 },
     "height":       { "type": "integer", "default": 1 },
@@ -40,7 +39,8 @@
     "accentColor":  { "type": "string",  "default": "#3cc0ff" },
     "surfaceColor": { "type": "string",  "default": "#ffffff" },
     "surfaceAlt":   { "type": "string",  "default": "#f6f8ff" },
-    "textColor":    { "type": "string",  "default": "#0b1221" }
+    "textColor":    { "type": "string",  "default": "#0b1221" },
+    "linkId": { "type": "string", "default": "", "description": "Pair this Config with a PerciBOT (Data-Bound) widget" }
   },
 
   "methods": { },

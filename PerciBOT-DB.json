@@ -19,27 +19,25 @@
   "dataBindings": {
     "myData": {
       "feeds": [
-        { "id": "dimensions", "accept": ["dimension"], "min": 1, "max": 6 },
-        { "id": "measures",   "accept": ["measure"],   "min": 1, "max": 12 }
-      ],
-      "supportsEmptyFeeds": false
+        { "id": "dimensions", "type": "dimension" },
+        { "id": "measures",   "type": "mainStructureMember" }
+      ]
     }
   },
   "properties": {
-    "width":  { "type": "integer", "default": 1 },
-    "height": { "type": "integer", "default": 1 },
+    "apiKey":       { "type": "string",  "default": "" },
+    "model":        { "type": "string",  "default": "gpt-3.5-turbo" },
+    "systemPrompt": { "type": "string",  "default": "You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud." },
+    "welcomeText":  { "type": "string",  "default": "Hello, I’m PerciBot! Ask about the bound data." },
 
-    "apiKey":       { "type": "string", "default": "" },
-    "model":        { "type": "string", "default": "gpt-3.5-turbo" },
-    "systemPrompt": { "type": "string", "default": "You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud." },
-    "welcomeText":  { "type": "string", "default": "Hello, I’m PerciBot! Ask about the bound data." },
+    "primaryColor": { "type": "string",  "default": "#1f4fbf" },
+    "primaryDark":  { "type": "string",  "default": "#163a8a" },
+    "surfaceColor": { "type": "string",  "default": "#ffffff" },
+    "surfaceAlt":   { "type": "string",  "default": "#f6f8ff" },
+    "textColor":    { "type": "string",  "default": "#0b1221" },
+    "linkId": { "type": "string", "default": "", "description": "Enter the same Link ID as your Config widget" }
 
-    "primaryColor": { "type": "string", "default": "#1f4fbf" },
-    "primaryDark":  { "type": "string", "default": "#163a8a" },
-    "surfaceColor": { "type": "string", "default": "#ffffff" },
-    "surfaceAlt":   { "type": "string", "default": "#f6f8ff" },
-    "textColor":    { "type": "string", "default": "#0b1221" }
   },
-  "methods": { },
-  "events": { }
+  "methods": {},
+  "events": {}
 }

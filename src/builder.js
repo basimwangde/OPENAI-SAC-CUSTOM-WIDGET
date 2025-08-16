@@ -68,6 +68,12 @@
         </div>
       </div>
 
+      <div class="f">
+        <label>Link ID (pair with Data-Bound widget)</label>
+        <input id="linkId" type="text" placeholder="e.g. sales-1" />
+      </div>
+
+
       <div class="section">
         <div class="title">Behavior</div>
         <div class="f">
@@ -114,7 +120,8 @@
 
       this.keys = [
         'apiKey','model','systemPrompt','welcomeText',
-        'primaryColor','primaryDark','surfaceColor','surfaceAlt','textColor'
+        'primaryColor','primaryDark','surfaceColor','surfaceAlt','textColor',
+        'linkId'
       ];
       this.inputs = this.keys.map(k => this.$(k));
 
@@ -211,7 +218,8 @@
         primaryDark:  p.primaryDark ?? '#163a8a',
         surfaceColor: p.surfaceColor ?? '#ffffff',
         surfaceAlt:   p.surfaceAlt ?? '#f6f8ff',
-        textColor:    p.textColor ?? '#0b1221'
+        textColor:    p.textColor ?? '#0b1221',
+        linkId: p.linkId ?? ''
       };
 
       this.keys.forEach(k => { if (this.$(k)) this.$(k).value = this._props[k]; });
@@ -250,7 +258,8 @@
         primaryDark:  get('primaryDark'),
         surfaceColor: get('surfaceColor'),
         surfaceAlt:   get('surfaceAlt'),
-        textColor:    get('textColor')
+        textColor:    get('textColor'),
+        linkId:       get('linkId')
       };
     }
 
@@ -267,6 +276,9 @@
       this._initial = { ...props };  // new baseline
       this._setDirty(false);
       this._toast('Saved');
+      window.dispatchEvent(new CustomEvent('percibot-config-broadcast', {
+        detail: { linkId: (props.linkId || '').trim(), props: { ...props }, _source: 'config' }
+        }));
     }
 
     _reset() {
@@ -278,7 +290,9 @@
         composed: true
      }));
       this._setDirty(false);
-      this._update();
+      window.dispatchEvent(new CustomEvent('percibot-config-broadcast', {
+        detail: { linkId: (this._initial.linkId || '').trim(), props: { ...this._initial }, _source: 'config' }
+        }));
     }
 
     _toast(msg) {
