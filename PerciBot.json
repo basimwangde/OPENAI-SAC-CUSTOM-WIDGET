@@ -15,29 +15,39 @@
       "url": "https://basimwangde.github.io/OPENAI-SAC-CUSTOM-WIDGET/src/chat-widget.js",
       "integrity": "",
       "ignoreIntegrity": true
+    },
+    {
+      "kind": "builder",
+      "tag": "perci-bot-builder",
+      "url": "https://basimwangde.github.io/OPENAI-SAC-CUSTOM-WIDGET/src/builder.js",
+      "integrity": "",
+      "ignoreIntegrity": true
     }
   ],
 
   "properties": {
-    "width":  { "type": "integer", "default": 1 },
-    "height": { "type": "integer", "default": 1 },
+    "width":        { "type": "integer", "default": 1 },
+    "height":       { "type": "integer", "default": 1 },
 
-    "apiKey":        { "type": "string",  "default": "" },
-    "model":         { "type": "string",  "default": "gpt-3.5-turbo" },
-    "systemPrompt":  { "type": "string",  "default": "You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud." },
-    "welcomeText":   { "type": "string",  "default": "Hello, I’m PerciBot! How can I assist you today?" },
+    "apiKey":       { "type": "string",  "default": "" },
 
-    "primaryColor":  { "type": "string",  "default": "#1f4fbf" },
-    "primaryDark":   { "type": "string",  "default": "#163a8a" },
-    "accentColor":   { "type": "string",  "default": "#3cc0ff" },
-    "surfaceColor":  { "type": "string",  "default": "#ffffff" },
-    "surfaceAlt":    { "type": "string",  "default": "#f6f8ff" },
-    "textColor":     { "type": "string",  "default": "#0b1221" }
+    "model": {
+      "type": "enum",
+      "default": "gpt-3.5-turbo",
+      "values": ["gpt-3.5-turbo", "gpt-4o-mini", "gpt-4o"]
+    },
+
+    "systemPrompt": { "type": "string", "default": "You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud." },
+    "welcomeText":  { "type": "string", "default": "Hello, I’m PerciBot! How can I assist you today?" },
+
+    "primaryColor": { "type": "string", "default": "#1f4fbf" },
+    "primaryDark":  { "type": "string", "default": "#163a8a" },
+    "accentColor":  { "type": "string", "default": "#3cc0ff" },
+    "surfaceColor": { "type": "string", "default": "#ffffff" },
+    "surfaceAlt":   { "type": "string", "default": "#f6f8ff" },
+    "textColor":    { "type": "string", "default": "#0b1221" }
   },
 
   "methods": { },
-
-  "events": { }
+  "events":  { }
 }
-
-

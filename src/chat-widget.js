@@ -1,4 +1,4 @@
-/* PerciBot - SAC custom widget (inline CSS + Configure modal) */
+/* PerciBot - SAC custom widget (inline CSS + Builder props + Configure modal) */
 (function () {
   const STYLES = `
 :host{
@@ -62,24 +62,36 @@
         textColor: '#0b1221'
       };
       this._messages = [];
+      // Prefer SAC props; fill only missing values from storage
       this._loadFromStorage();
       this._render();
     }
 
     /* ---- Persistence ---- */
+    _keyScope() {
+      const host = (location && location.host) || 'unknown';
+      const appId = (this.closest('[widgetid]')?.getAttribute('widgetid')) || 'percibot';
+      return `percibot.cfg::${host}::${appId}`;
+    }
     _loadFromStorage() {
-      try {
-        const saved = JSON.parse(localStorage.getItem('percibot.cfg') || '{}');
-        const keys = ['apiKey','model','primaryColor','primaryDark','accentColor','surfaceColor','surfaceAlt','textColor','systemPrompt','welcomeText'];
-        for (const k of keys) if (saved[k] !== undefined) this.props[k] = saved[k];
-      } catch(_) {}
+      const k = this._keyScope();
+      const take = (raw) => { try { return JSON.parse(raw || '{}'); } catch { return {}; } };
+      const saved = { ...take(localStorage.getItem(k)), ...take(sessionStorage.getItem(k)) };
+      const keys = ['apiKey','model','primaryColor','primaryDark','accentColor','surfaceColor','surfaceAlt','textColor','systemPrompt','welcomeText'];
+      for (const p of keys) {
+        if ((this.props[p] === undefined || this.props[p] === '') && saved[p] !== undefined) this.props[p] = saved[p];
+      }
     }
     _saveToStorage() {
+      const k = this._keyScope();
       const p = this.props;
-      const save = { apiKey:p.apiKey, model:p.model, primaryColor:p.primaryColor, primaryDark:p.primaryDark,
+      const payload = JSON.stringify({
+        apiKey:p.apiKey, model:p.model, primaryColor:p.primaryColor, primaryDark:p.primaryDark,
         accentColor:p.accentColor, surfaceColor:p.surfaceColor, surfaceAlt:p.surfaceAlt, textColor:p.textColor,
-        systemPrompt:p.systemPrompt, welcomeText:p.welcomeText };
-      localStorage.setItem('percibot.cfg', JSON.stringify(save));
+        systemPrompt:p.systemPrompt, welcomeText:p.welcomeText
+      });
+      try { localStorage.setItem(k, payload); } catch {}
+      try { sessionStorage.setItem(k, payload); } catch {}
     }
 
     /* ---- SAC lifecycle ---- */
@@ -87,7 +99,7 @@
     onCustomWidgetAfterUpdate(changedProps) {
       this.props = { ...this.props, ...changedProps };
       this._applyTheme();
-      if (this._initialized) return;
+      if (this._initialized) { this._updateNote(); this._toggleHeaderChips(); return; }
       this._initialized = true;
       if (this.props.welcomeText) this._pushAssistant(this.props.welcomeText);
       this._toggleHeaderChips();
@@ -115,7 +127,7 @@
             <span id="roleTag" class="pcg-chip" style="display:none">AI Assistant</span>
           </div>
 
-          <!-- Configure modal -->
+          <!-- Configure modal (runtime) -->
           <div id="cfgModal" class="pcg-modal">
             <div class="pcg-card">
               <div style="font-weight:700; margin-bottom:8px">PerciBot Settings</div>
@@ -198,7 +210,7 @@
       const modelOk = !!this.props.model;
       this.$note.textContent = keyOk && modelOk
         ? `Model: ${this.props.model}`
-        : `⚠️ Add API Key and pick a model (Configure) to enable PerciBot replies.`;
+        : `⚠️ Add API Key and pick a model (Builder or Configure) to enable PerciBot replies.`;
     }
 
     _scrollToBottom() { this.$msgs.scrollTop = this.$msgs.scrollHeight; }
@@ -218,7 +230,7 @@
     async _send() {
       const text = (this.$input.value || '').trim(); if (!text) return;
       this._pushUser(text); this.$input.value = '';
-      if (!this.props.apiKey) { this._pushAssistant('⚠️ API key missing. Click Configure to set it.'); return; }
+      if (!this.props.apiKey) { this._pushAssistant('⚠️ API key missing. Use Builder or Configure to set it.'); return; }
 
       const typing = document.createElement('div');
       typing.className = 'pcg-msg assist'; typing.textContent = '…';
