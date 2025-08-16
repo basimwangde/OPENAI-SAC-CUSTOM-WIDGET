@@ -1,4 +1,4 @@
-/* PerciBot - SAC custom widget (no external CSS) */
+/* PerciBot - SAC custom widget (inline CSS + Configure modal) */
 (function () {
   const STYLES = `
 :host{
@@ -14,8 +14,8 @@
 .pcg-title{display:flex;align-items:center;gap:10px;font-weight:700}
 .pcg-avatar{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:10px;
   background:rgba(255,255,255,.14);backdrop-filter:blur(4px)}
-.pcg-chip{font-size:12px;font-weight:600;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.16);
-  border:1px solid rgba(255,255,255,.28)}
+.pcg-chip{font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.28); color:#fff}
 .pcg-messages{padding:14px 14px 4px;overflow:auto;background:
   radial-gradient(1200px 300px at 0% -20%,rgba(60,192,255,.10),transparent 60%),
   linear-gradient(#fff,var(--pc-surfaceAlt))}
@@ -36,6 +36,12 @@
   box-shadow:0 6px 14px rgba(31,79,191,.32);transition:transform .06s ease,filter .15s ease,box-shadow .15s ease}
 .pcg-btn:hover{filter:brightness(1.05)}
 .pcg-btn:active{transform:translateY(1px)}
+/* modal */
+.pcg-modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:9999;background:rgba(0,0,0,.25)}
+.pcg-card{min-width:320px;max-width:520px;background:#fff;border-radius:12px;padding:16px;
+  box-shadow:0 12px 32px rgba(0,0,0,.25)}
+.pcg-input2{width:100%;padding:10px;border:1px solid #d0d3da;border-radius:8px;margin:6px 0 12px}
+.pcg-actions{display:flex;gap:8px;justify-content:flex-end}
 @media (max-width:560px){.pcg-msg{max-width:92%}}
   `;
 
@@ -56,59 +62,135 @@
         textColor: '#0b1221'
       };
       this._messages = [];
+      this._loadFromStorage();
       this._render();
     }
 
-    /* SAC lifecycle */
-    onCustomWidgetBeforeUpdate(changedProps) {
-      this.props = { ...this.props, ...changedProps };
+    /* ---- Persistence ---- */
+    _loadFromStorage() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('percibot.cfg') || '{}');
+        const keys = ['apiKey','model','primaryColor','primaryDark','accentColor','surfaceColor','surfaceAlt','textColor','systemPrompt','welcomeText'];
+        for (const k of keys) if (saved[k] !== undefined) this.props[k] = saved[k];
+      } catch(_) {}
+    }
+    _saveToStorage() {
+      const p = this.props;
+      const save = { apiKey:p.apiKey, model:p.model, primaryColor:p.primaryColor, primaryDark:p.primaryDark,
+        accentColor:p.accentColor, surfaceColor:p.surfaceColor, surfaceAlt:p.surfaceAlt, textColor:p.textColor,
+        systemPrompt:p.systemPrompt, welcomeText:p.welcomeText };
+      localStorage.setItem('percibot.cfg', JSON.stringify(save));
     }
 
+    /* ---- SAC lifecycle ---- */
+    onCustomWidgetBeforeUpdate(changedProps) { this.props = { ...this.props, ...changedProps }; }
     onCustomWidgetAfterUpdate(changedProps) {
       this.props = { ...this.props, ...changedProps };
       this._applyTheme();
       if (this._initialized) return;
       this._initialized = true;
       if (this.props.welcomeText) this._pushAssistant(this.props.welcomeText);
+      this._toggleHeaderChips();
     }
 
-    /* theming -> CSS variables */
+    /* ---- Theme ---- */
     _applyTheme() {
       const r = this.shadowRoot.host.style, p = this.props || {};
-      r.setProperty('--pc-primary', p.primaryColor || '#1f4fbf');
-      r.setProperty('--pc-primaryDark', p.primaryDark || '#163a8a');
-      r.setProperty('--pc-accent', p.accentColor || '#3cc0ff');
-      r.setProperty('--pc-surface', p.surfaceColor || '#ffffff');
-      r.setProperty('--pc-surfaceAlt', p.surfaceAlt || '#f6f8ff');
-      r.setProperty('--pc-text', p.textColor || '#0b1221');
+      r.setProperty('--pc-primary',     p.primaryColor || '#1f4fbf');
+      r.setProperty('--pc-primaryDark', p.primaryDark  || '#163a8a');
+      r.setProperty('--pc-accent',      p.accentColor  || '#3cc0ff');
+      r.setProperty('--pc-surface',     p.surfaceColor || '#ffffff');
+      r.setProperty('--pc-surfaceAlt',  p.surfaceAlt   || '#f6f8ff');
+      r.setProperty('--pc-text',        p.textColor    || '#0b1221');
     }
 
-    /* UI */
+    /* ---- UI ---- */
     _render() {
       this.shadowRoot.innerHTML = `
         <style>${STYLES}</style>
         <div class="pcg-wrapper">
           <div class="pcg-header">
             <div class="pcg-title"><span class="pcg-avatar">🤖</span><span>PerciBot</span></div>
-            <span class="pcg-chip">AI Assistant</span>
+            <button id="cfgBtn" class="pcg-chip" style="cursor:pointer">Configure</button>
+            <span id="roleTag" class="pcg-chip" style="display:none">AI Assistant</span>
           </div>
+
+          <!-- Configure modal -->
+          <div id="cfgModal" class="pcg-modal">
+            <div class="pcg-card">
+              <div style="font-weight:700; margin-bottom:8px">PerciBot Settings</div>
+              <label style="font-size:12px">OpenAI API Key</label>
+              <input id="cfgKey" type="password" placeholder="sk-..." class="pcg-input2">
+              <label style="font-size:12px">Model</label>
+              <select id="cfgModel" class="pcg-input2">
+                <option value="gpt-4o-mini">gpt-4o-mini</option>
+                <option value="gpt-4o">gpt-4o</option>
+                <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+              </select>
+              <div class="pcg-actions">
+                <button id="cfgCancel" class="pcg-btn" style="background:#9aa3b2">Cancel</button>
+                <button id="cfgSave" class="pcg-btn">Save</button>
+              </div>
+            </div>
+          </div>
+
           <div id="msgs" class="pcg-messages" role="log" aria-live="polite"></div>
           <div class="pcg-note" id="note"></div>
           <div class="pcg-footer">
             <textarea id="input" class="pcg-input" rows="1" placeholder="Type your message here..."></textarea>
             <button id="send" class="pcg-btn">Send</button>
           </div>
-        </div>`;
+        </div>
+      `;
+
+      // refs
       this.$msgs  = this.shadowRoot.getElementById('msgs');
       this.$note  = this.shadowRoot.getElementById('note');
       this.$input = this.shadowRoot.getElementById('input');
       this.$send  = this.shadowRoot.getElementById('send');
 
+      this.$cfgBtn   = this.shadowRoot.getElementById('cfgBtn');
+      this.$cfgModal = this.shadowRoot.getElementById('cfgModal');
+      this.$cfgKey   = this.shadowRoot.getElementById('cfgKey');
+      this.$cfgModel = this.shadowRoot.getElementById('cfgModel');
+      this.$cfgCancel= this.shadowRoot.getElementById('cfgCancel');
+      this.$cfgSave  = this.shadowRoot.getElementById('cfgSave');
+      this.$roleTag  = this.shadowRoot.getElementById('roleTag');
+
+      // listeners
       this.$send.addEventListener('click', () => this._send());
       this.$input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this._send(); }
       });
+
+      if (this.$cfgBtn) {
+        this.$cfgBtn.addEventListener('click', () => {
+          this.$cfgKey.value = this.props.apiKey || '';
+          this.$cfgModel.value = this.props.model || 'gpt-3.5-turbo';
+          this.$cfgModal.style.display = 'flex';
+        });
+      }
+      this.$cfgCancel.addEventListener('click', () => this.$cfgModal.style.display = 'none');
+      this.$cfgSave.addEventListener('click', () => {
+        this.props.apiKey = (this.$cfgKey.value || '').trim();
+        this.props.model  = this.$cfgModel.value;
+        this._saveToStorage();
+        this._applyTheme();
+        this._updateNote();
+        this._toggleHeaderChips();
+        this.$cfgModal.style.display = 'none';
+      });
+
+      // initial UI state
+      this._applyTheme();
       this._updateNote();
+      this._toggleHeaderChips();
+    }
+
+    _toggleHeaderChips() {
+      const hasKey = !!this.props.apiKey;
+      if (this.$cfgBtn)  this.$cfgBtn.style.display = hasKey ? 'none' : 'inline-flex';
+      if (this.$roleTag) this.$roleTag.style.display = hasKey ? 'inline-flex' : 'none';
     }
 
     _updateNote() {
@@ -116,7 +198,7 @@
       const modelOk = !!this.props.model;
       this.$note.textContent = keyOk && modelOk
         ? `Model: ${this.props.model}`
-        : `⚠️ Add API Key and pick a model in the Builder panel to enable PerciBot replies.`;
+        : `⚠️ Add API Key and pick a model (Configure) to enable PerciBot replies.`;
     }
 
     _scrollToBottom() { this.$msgs.scrollTop = this.$msgs.scrollHeight; }
@@ -136,7 +218,7 @@
     async _send() {
       const text = (this.$input.value || '').trim(); if (!text) return;
       this._pushUser(text); this.$input.value = '';
-      if (!this.props.apiKey) { this._pushAssistant('⚠️ API key missing. Set it in the Builder panel.'); return; }
+      if (!this.props.apiKey) { this._pushAssistant('⚠️ API key missing. Click Configure to set it.'); return; }
 
       const typing = document.createElement('div');
       typing.className = 'pcg-msg assist'; typing.textContent = '…';
@@ -182,7 +264,6 @@
   try {
     if (!customElements.get('perci-bot')) customElements.define('perci-bot', PerciBot);
   } catch (e) {
-    // If define fails (duplicate, CSP, etc.), log but avoid crashing SAC loader.
     console.error('PerciBot define failed:', e);
   }
 })();
