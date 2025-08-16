@@ -86,6 +86,7 @@
         surfaceAlt:   '#f6f8ff',
         textColor:    '#0b1221'
       };
+      this._boundRows = []; // <-- holds data from myData binding (DB variant)
     }
 
     connectedCallback() {
@@ -99,11 +100,21 @@
       Object.assign(this._props, changedProps);
       this._applyTheme();
       // this.$modelChip.textContent = this._props.model || '';
+      // If data binding is present, show bound-row count; else show generic label
+      const rows = (changedProps.myData && changedProps.myData.data) ? changedProps.myData.data : null;
+      if (rows && Array.isArray(rows)) {
+      this._boundRows = rows;
+      this.$modelChip.textContent = `Bound: ${rows.length} row(s)`;
+      } else {
       this.$modelChip.textContent = 'AI Assistant';
+      }
       this.$hint.textContent = this._props.apiKey ? '' : 'API key not set – open Builder to configure';
       // if Builder changed welcome text and chat is empty, show it
       if (!this.$chat.innerHTML && this._props.welcomeText) {
         this._append('bot', this._props.welcomeText);
+        if (this._boundRows.length) {
+        this._append('bot', `I can analyze the data you bound to me.`);
+      }
       }
     }
 

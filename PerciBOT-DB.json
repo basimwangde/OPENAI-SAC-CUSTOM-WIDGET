@@ -1,0 +1,45 @@
+{
+  "eula": "",
+  "license": "",
+  "vendor": "Percipere Consulting",
+  "id": "com.percipere.sac.percibot.db",
+  "version": "1.0.0",
+  "name": "PerciBot (Data-Bound)",
+  "newInstancePrefix": "PerciBotDB",
+  "description": "PerciBOT with Data Source binding to story models",
+  "webcomponents": [
+    {
+      "kind": "main",
+      "tag": "perci-bot",
+      "url": "https://basimwangde.github.io/OPENAI-SAC-CUSTOM-WIDGET/src/chat-widget.js",
+      "integrity": "",
+      "ignoreIntegrity": true
+    }
+  ],
+  "dataBindings": {
+    "myData": {
+      "feeds": [
+        { "id": "dimensions", "accept": ["dimension"], "min": 1, "max": 6 },
+        { "id": "measures",   "accept": ["measure"],   "min": 1, "max": 12 }
+      ],
+      "supportsEmptyFeeds": false
+    }
+  },
+  "properties": {
+    "width":  { "type": "integer", "default": 1 },
+    "height": { "type": "integer", "default": 1 },
+
+    "apiKey":       { "type": "string", "default": "" },
+    "model":        { "type": "string", "default": "gpt-3.5-turbo" },
+    "systemPrompt": { "type": "string", "default": "You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud." },
+    "welcomeText":  { "type": "string", "default": "Hello, I’m PerciBot! Ask about the bound data." },
+
+    "primaryColor": { "type": "string", "default": "#1f4fbf" },
+    "primaryDark":  { "type": "string", "default": "#163a8a" },
+    "surfaceColor": { "type": "string", "default": "#ffffff" },
+    "surfaceAlt":   { "type": "string", "default": "#f6f8ff" },
+    "textColor":    { "type": "string", "default": "#0b1221" }
+  },
+  "methods": { },
+  "events": { }
+}
