@@ -98,7 +98,8 @@
     onCustomWidgetAfterUpdate(changedProps = {}) {
       Object.assign(this._props, changedProps);
       this._applyTheme();
-      this.$modelChip.textContent = this._props.model || '';
+      // this.$modelChip.textContent = this._props.model || '';
+      this.$modelChip.textContent = 'AI Assistant';
       this.$hint.textContent = this._props.apiKey ? 'Ready' : 'API key not set – open Builder to configure';
       // if Builder changed welcome text and chat is empty, show it
       if (!this.$chat.innerHTML && this._props.welcomeText) {
