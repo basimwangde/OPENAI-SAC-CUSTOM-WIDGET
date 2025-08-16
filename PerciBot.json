@@ -1,96 +1,43 @@
 {
+  "eula": "",
+  "license": "",
+  "vendor": "Percipere Consulting",
   "id": "com.percipere.sac.percibot",
   "version": "1.0.0",
-  "modules": {
-    "widgets": [
-      {
-        "id": "com.percipere.sac.percibot.widget",
-        "name": "PerciBot",
-        "description": "Conversational AI assistant for SAC powered by OpenAI",
-        "icon": "https://cdn.jsdelivr.net/gh/tabler/tabler-icons/icons/robot.svg",
-        "vendor": "Percipere Consulting",
-        "webcomponents": [
-          {
-            "tag": "perci-bot",
-            "url": "src/chat-widget.js",
-            "integrity": "",
-            "name": "PerciBot Web Component"
-          }
-        ],
-        "properties": {
-  "apiKey": {
-    "type": "string",
-    "displayName": "OpenAI API Key",
-    "group": "API Settings",
-    "placeholder": "sk-…",
-    "secret": true
+  "name": "PerciBot",
+  "newInstancePrefix": "PerciBot",
+  "description": "Conversational AI assistant for SAP Analytics Cloud powered by OpenAI",
+
+  "webcomponents": [
+    {
+      "kind": "main",
+      "tag": "perci-bot",
+      "url": "https://basimwangde.github.io/OPENAI-SAC-CUSTOM-WIDGET/src/chat-widget.js",
+      "integrity": "",
+      "ignoreIntegrity": true
+    }
+  ],
+
+  "properties": {
+    "width":  { "type": "integer", "default": 1 },
+    "height": { "type": "integer", "default": 1 },
+
+    "apiKey":        { "type": "string",  "default": "" },
+    "model":         { "type": "string",  "default": "gpt-3.5-turbo" },
+    "systemPrompt":  { "type": "string",  "default": "You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud." },
+    "welcomeText":   { "type": "string",  "default": "Hello, I’m PerciBot! How can I assist you today?" },
+
+    "primaryColor":  { "type": "string",  "default": "#1f4fbf" },
+    "primaryDark":   { "type": "string",  "default": "#163a8a" },
+    "accentColor":   { "type": "string",  "default": "#3cc0ff" },
+    "surfaceColor":  { "type": "string",  "default": "#ffffff" },
+    "surfaceAlt":    { "type": "string",  "default": "#f6f8ff" },
+    "textColor":     { "type": "string",  "default": "#0b1221" }
   },
-  "model": {
-    "type": "enum",
-    "displayName": "Select AI Model",
-    "group": "API Settings",
-    "default": "gpt-3.5-turbo",
-    "values": ["gpt-3.5-turbo","gpt-4o-mini","gpt-4o","gpt-4.1-mini"]
-  },
-  "systemPrompt": {
-    "type": "string",
-    "displayName": "System Prompt (optional)",
-    "group": "Behavior",
-    "multiline": true,
-    "default": "You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud."
-  },
-  "welcomeText": {
-    "type": "string",
-    "displayName": "Welcome Message",
-    "group": "UI",
-    "default": "Hello, I’m PerciBot! How can I assist you today?"
-  },
-  "primaryColor": {
-    "type": "string",
-    "displayName": "Primary",
-    "group": "Theme",
-    "default": "#1f4fbf"
-  },
-  "primaryDark": {
-    "type": "string",
-    "displayName": "Primary (Dark)",
-    "group": "Theme",
-    "default": "#163a8a"
-  },
-  "accentColor": {
-    "type": "string",
-    "displayName": "Accent",
-    "group": "Theme",
-    "default": "#3cc0ff"
-  },
-  "surfaceColor": {
-    "type": "string",
-    "displayName": "Surface",
-    "group": "Theme",
-    "default": "#ffffff"
-  },
-  "surfaceAlt": {
-    "type": "string",
-    "displayName": "Surface Alt",
-    "group": "Theme",
-    "default": "#f6f8ff"
-  },
-  "textColor": {
-    "type": "string",
-    "displayName": "Text",
-    "group": "Theme",
-    "default": "#0b1221"
-  }
+
+  "methods": { },
+
+  "events": { }
 }
-,
-        "events": [],
-        "methods": [],
-        "dataBindings": []
-      }
-    ]
-  },
-  "resources": [
-    { "url": "src/chat-widget.js" },
-    { "url": "src/styles.css" }
-  ]
-}
+
+
