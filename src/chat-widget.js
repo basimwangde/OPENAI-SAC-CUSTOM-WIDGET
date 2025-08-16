@@ -42,7 +42,7 @@
         <div class="panel" id="chat"></div>
 
         <div class="inputRow">
-          <input id="input" placeholder="Ask anything about your analytics…">
+          <textarea id="input" placeholder="Ask anything about your analytics…"></textarea>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <button id="send" class="primary">Send</button>
             <button id="clear">Clear</button>
