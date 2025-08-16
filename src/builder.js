@@ -258,6 +258,11 @@
       if (!this._validateTheme()) return;
       const props = this._collect();
       this.dispatchEvent(new CustomEvent('propertiesChanged', { detail: { properties: props }}));
+      this.dispatchEvent(new CustomEvent('propertiesChanged', {
+        detail: { properties: props },
+        bubbles: true,
+        composed: true
+    }));
       this._props = { ...props };
       this._initial = { ...props };  // new baseline
       this._setDirty(false);
@@ -267,6 +272,11 @@
     _reset() {
       this._apply(this._initial);
       this.dispatchEvent(new CustomEvent('propertiesChanged', { detail: { properties: { ...this._initial } }}));
+      this.dispatchEvent(new CustomEvent('propertiesChanged', {
+        detail: { properties: { ...this._initial } },
+        bubbles: true,
+        composed: true
+     }));
       this._setDirty(false);
       this._toast('Reverted');
     }
