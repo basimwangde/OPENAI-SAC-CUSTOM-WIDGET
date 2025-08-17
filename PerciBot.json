@@ -40,7 +40,7 @@
     "surfaceColor": { "type": "string",  "default": "#ffffff" },
     "surfaceAlt":   { "type": "string",  "default": "#f6f8ff" },
     "textColor":    { "type": "string",  "default": "#0b1221" },
-    "linkId": { "type": "string", "default": "", "description": "Pair this Config with a PerciBOT (Data-Bound) widget" }
+    "datasets": { "type": "string", "default": "" }
   },
 
   "methods": { },

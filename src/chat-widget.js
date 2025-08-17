@@ -1,4 +1,4 @@
-/* PerciBot — SAC Chat Widget (no Configure modal; reads Builder properties only) */
+/* PerciBot — SAC Chat Widget (Analytic App push mode: receives datasets via setProperties) */
 (function () {
   const tpl = document.createElement('template');
   tpl.innerHTML = `
@@ -79,123 +79,57 @@
         model: 'gpt-3.5-turbo',
         systemPrompt: 'You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud.',
         welcomeText: 'Hello, I’m PerciBot! How can I assist you?',
+        datasets: '',   // JSON string pushed from Analytic App: { Sales:{schema:[],rows:[]}, ... }
         // theme
         primaryColor: '#1f4fbf',
         primaryDark:  '#163a8a',
         surfaceColor: '#ffffff',
         surfaceAlt:   '#f6f8ff',
-        textColor:    '#0b1221',
-        linkId: ''
+        textColor:    '#0b1221'
       };
-      this._boundRows = []; // <-- holds data from myData binding (DB variant)
-      this._schema    = [];   // column keys after flattening
 
-      window.addEventListener('percibot-config-broadcast', (e) => {
-      const detail = e && e.detail;
-      if (!detail) return;
-
-      const inboundLink = (detail.linkId || '').trim();
-      const myLink      = (this._props.linkId || '').trim();
-      if (!inboundLink || !myLink || inboundLink !== myLink) return;
-
-      // Apply config from the Config widget to this instance
-      const incomingProps = detail.props || {};
-      // Optional: restrict which keys can be overridden
-      const safe = {
-        apiKey: incomingProps.apiKey,
-        model: incomingProps.model,
-        systemPrompt: incomingProps.systemPrompt,
-        welcomeText: incomingProps.welcomeText,
-        primaryColor: incomingProps.primaryColor,
-        primaryDark: incomingProps.primaryDark,
-        surfaceColor: incomingProps.surfaceColor,
-        surfaceAlt: incomingProps.surfaceAlt,
-        textColor: incomingProps.textColor,
-        linkId: incomingProps.linkId
-      };
-      this.setProperties(safe);
-
-      // Subtle UX hint so you know the hand-shake happened
-      try { this.$modelChip.textContent += ' · Linked✔'; } catch(_) {}
-    });
-
+      this._datasets = {}; // parsed datasets
     }
 
     connectedCallback() {
-      // initial welcome once mounted (content empty)
       if (!this.$chat.innerHTML && this._props.welcomeText) {
         this._append('bot', this._props.welcomeText);
       }
     }
-
-    onCustomWidgetBeforeUpdate(changedProps) {
-      if (changedProps.dataBinding && changedProps.dataBinding.data) {
-        this._boundRows = changedProps.dataBinding.data;
-      }
-    }
-
-   // helper: flatten SAC binding rows (dimension.label, measure.raw)
-    _flattenBindingRows(binding) {
-      if (!binding || !Array.isArray(binding.data)) return [];
-      return binding.data.map(row => {
-        const o = {};
-        Object.keys(row).forEach(k => {
-          const v = row[k];
-          if (v && typeof v === 'object') {
-            if ('raw' in v)   o[k] = v.raw;   // measures
-            else if ('label' in v) o[k] = v.label; // dimensions
-            else o[k] = String(v);
-          } else {
-            o[k] = v;
-          }
-        });
-        return o;
-      });
-    }
-
 
     onCustomWidgetAfterUpdate(changedProps = {}) {
       Object.assign(this._props, changedProps);
-
-      if (changedProps.linkId) {
-      this._props.linkId = changedProps.linkId;
-      if (this.dataBinding && this.dataBinding.data && this.dataBinding.data.length) {
-        this.boundRows = this.dataBinding.data; // available rows from linked widget
-      }
-}
       this._applyTheme();
-      // this.$modelChip.textContent = this._props.model || '';
-          // If the DB variant is used, SAC passes our binding by its id ("myData")
-          this._isDB = !!changedProps.myData;
 
-          
-    if (this._isDB) {
-      const flat = this._flattenBindingRows(changedProps.myData) || [];
-      if (flat.length) {
-        this._boundRows = flat;
-        this._schema = Object.keys(flat[0]);
-        this.$modelChip.textContent = `Bound: ${flat.length} row(s)`;
-      } else {
-        this._boundRows = [];
+      // Show API key hint
+      this.$hint.textContent = this._props.apiKey ? '' : 'API key not set – open Builder to configure';
+
+      // Parse pushed datasets (if any)
+      if (typeof changedProps.datasets === 'string') {
+        try {
+          this._datasets = JSON.parse(changedProps.datasets || '{}') || {};
+          const tag = Object.entries(this._datasets)
+            .map(([k,v]) => `${k}: ${(v?.rows?.length||0)} rows`)
+            .join(' · ');
+          this.$modelChip.textContent = tag || 'AI Assistant';
+        } catch {
+          this._datasets = {};
+          this.$modelChip.textContent = 'AI Assistant';
+        }
+      } else if (!this.$modelChip.textContent) {
         this.$modelChip.textContent = 'AI Assistant';
       }
-    } else {
-      this.$modelChip.textContent = 'AI Assistant';
-    }
-      this.$hint.textContent = this._props.apiKey ? '' : 'API key not set – open Builder to configure';
-      // if Builder changed welcome text and chat is empty, show it
-      if (!this.$chat.innerHTML && this._props.welcomeText) {
-        this._append('bot', this._props.welcomeText);
-        if (this._boundRows.length) {
-        this._append('bot', `I can analyze the data you bound to me.`);
-      }
+
+      // If first render and datasets exist, nudge the user
+      if (!this.$chat.innerHTML) {
+        if (this._props.welcomeText) this._append('bot', this._props.welcomeText);
+        if (Object.keys(this._datasets).length) {
+          this._append('bot', 'Datasets received. Try: "Top 5 products by Sales" or "Compare Sales vs Inventory by month".');
+        }
       }
     }
-  // (optional) expose a getter if you’ll read it from app scripting later
-    getBoundData() { return { schema: this._schema, rows: this._boundRows }; }
 
-
-    setProperties(props) { this.onCustomWidgetAfterUpdate(props); } // older runtimes
+    setProperties(props) { this.onCustomWidgetAfterUpdate(props); } // SAC older runtimes
 
     _applyTheme() {
       const wrap = this._shadowRoot.querySelector('.wrap');
@@ -217,7 +151,6 @@
       const b = document.createElement('div');
       b.className = `msg ${role === 'user' ? 'user' : 'bot'}`;
       b.textContent = text;
-      // style bubbles against theme
       if (role === 'user') {
         b.style.background = '#97cdf2ff';
         b.style.border = '1px solid #e7eaf0';
