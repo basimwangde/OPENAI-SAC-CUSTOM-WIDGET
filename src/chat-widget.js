@@ -87,7 +87,6 @@
         surfaceAlt:   '#f6f8ff',
         textColor:    '#0b1221'
       };
-      this.payload = '';
       this._datasets = {}; // parsed datasets
     }
 
@@ -132,7 +131,7 @@
     onCustomWidgetAfterUpdate(changedProps = {}) {
       Object.assign(this._props, changedProps);
       this._applyTheme();
-
+      console.log('datasets',changedProps);
       // Show API key hint
       this.$hint.textContent = this._props.apiKey ? '' : 'API key not set – open Builder to configure';
 
@@ -176,6 +175,7 @@
 
     // SAC will call this for custom methods defined in JSON
     onCustomWidgetRequest(methodName, params) {
+      console.log('onCustomWidgetRequest',params);
       if (methodName !== 'setDatasets') return;
       console.log(params);
       let payload = '';
