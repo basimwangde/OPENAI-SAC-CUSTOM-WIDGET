@@ -106,7 +106,7 @@
 
       <div class="footer">
         <div class="muted" id="hint"></div>
-        <div class="muted"><a href="www.percipere.co">Percipere Consulting</a></div>
+        <div class="muted"><a href="https://www.linkedin.com/in/basim-wangde/" target="_blank" >Basim Wangde</a></div>
       </div>
     </div>
   `
@@ -200,7 +200,7 @@
       console.log('datasets', changedProps)
       // Show API key hint
       this.$hint.textContent = this._props.apiKey
-        ? ''
+        ? 'AI can make mistakes. Please verify results.'
         : 'API key not set – open Builder to configure'
 
       // Parse pushed datasets (if any)
