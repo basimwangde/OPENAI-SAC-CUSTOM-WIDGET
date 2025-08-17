@@ -106,25 +106,38 @@
 
       // Parse pushed datasets (if any)
       if (typeof changedProps.datasets === 'string') {
-        try {
-          this._datasets = JSON.parse(changedProps.datasets || '{}') || {};
-          const tag = Object.entries(this._datasets)
-            .map(([k,v]) => `${k}: ${(v?.rows?.length||0)} rows`)
-            .join(' · ');
-          this.$modelChip.textContent = tag || 'AI Assistant';
-        } catch {
-          this._datasets = {};
-          this.$modelChip.textContent = 'AI Assistant';
-        }
-      } else if (!this.$modelChip.textContent) {
+      try {
+        const parsed = JSON.parse(changedProps.datasets || '{}') || {};
+        // reconstruct rows as array of objects for convenience
+        const rebuilt = {};
+        Object.keys(parsed).forEach(name => {
+          const { schema = [], rows2D = [] } = parsed[name] || {};
+          const rows = rows2D.map(arr => {
+            const obj = {};
+            for (let i=0;i<schema.length;i++) obj[schema[i]] = arr[i];
+            return obj;
+          });
+          rebuilt[name] = { schema, rows, rows2D };
+        });
+        this._datasets = rebuilt;
+
+        const tag = Object.entries(this._datasets)
+          .map(([k,v]) => `${k}: ${(v?.rows?.length||0)} rows`)
+          .join(' · ');
+        this.$modelChip.textContent = tag || 'AI Assistant';
+      } catch {
+        this._datasets = {};
+        this.$modelChip.textContent = 'AI Assistant';
+      }
+    } else if (!this.$modelChip.textContent) {
         this.$modelChip.textContent = 'AI Assistant';
       }
 
       // If first render and datasets exist, nudge the user
       if (!this.$chat.innerHTML) {
         if (this._props.welcomeText) this._append('bot', this._props.welcomeText);
-        if (Object.keys(this._datasets).length) {
-          this._append('bot', 'Datasets received. Try: "Top 5 products by Sales" or "Compare Sales vs Inventory by month".');
+        if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
+          this._append('bot', 'Datasets received. Ready to answer any analytical questions!');
         }
       }
     }
