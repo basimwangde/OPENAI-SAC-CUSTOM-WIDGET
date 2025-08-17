@@ -231,47 +231,116 @@
       this.$chat.scrollTop = this.$chat.scrollHeight;
     }
 
-    async _send() {
-      const q = (this.$input.value || '').trim();
-      if (!q) return;
-      this._append('user', q);
-      this.$input.value = '';
+      _buildDatasetContext(opts = {}) {
+    const maxRowsPerSet = Number(opts.maxRowsPerSet ?? 5);
+    const maxCharsTotal = Number(opts.maxCharsTotal ?? 8000);
 
-      if (!this._props.apiKey) {
-        this._append('bot', '⚠️ API key not set. Open the Builder panel to configure.');
-        return;
+    const lines = [];
+    lines.push('You have access to the following datasets. Use ONLY these when answering analytics questions:');
+
+    const entries = Object.entries(this._datasets || {});
+    if (!entries.length) {
+      lines.push('(No datasets provided.)');
+      return lines.join('\n');
+    }
+
+    for (const [name, ds] of entries) {
+      const schema = (ds?.schema || []).join(', ');
+      const total = ds?.rows?.length || 0;
+      const preview = (ds?.rows || []).slice(0, maxRowsPerSet);
+
+      lines.push(`\n[DATASET] ${name}`);
+      lines.push(`- Columns: ${schema || '(none)'}`);
+      lines.push(`- Total Rows: ${total}`);
+      if (preview.length) {
+        lines.push(`- Preview (first ${preview.length} rows):`);
+        for (let i = 0; i < preview.length; i++) {
+          // safe, compact row print
+          const row = preview[i];
+          const compact = Object.keys(row).reduce((acc, k) => {
+            const v = row[k];
+            // stringify lightly; trim long strings
+            let s = (v === null || v === undefined) ? '' : String(v);
+            if (s.length > 120) s = s.slice(0, 117) + '...';
+            acc[k] = s;
+            return acc;
+          }, {});
+          lines.push(`  - ${JSON.stringify(compact)}`);
+        }
+      } else {
+        lines.push(`- Preview: (no rows)`);
       }
 
-      try {
-        const body = {
-          model: this._props.model || 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: this._props.systemPrompt || '' },
-            { role: 'user', content: q }
-          ]
-        };
-
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this._props.apiKey}`
-          },
-          body: JSON.stringify(body)
-        });
-
-        if (!res.ok) {
-          const txt = await res.text();
-          throw new Error(`${res.status} ${res.statusText}: ${txt}`);
-        }
-
-        const data = await res.json();
-        const ans = data.choices?.[0]?.message?.content || '(No content)';
-        this._append('bot', ans);
-      } catch (e) {
-        this._append('bot', `❌ ${e.message}`);
+      // stop if we’re near the char budget
+      if (lines.join('\n').length > maxCharsTotal) {
+        lines.push('\n(Context truncated to stay within token limits.)');
+        break;
       }
     }
+
+    // a tiny instruction so the model behaves
+    lines.push(`
+Guidelines:
+- Prefer calculations and conclusions implied by the dataset preview and schema.
+- If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
+- Be precise with column names; do not invent fields that aren’t in the schema.`.trim());
+
+    return lines.join('\n');
+  }
+
+
+      async _send() {
+    const q = (this.$input.value || '').trim();
+    if (!q) return;
+    this._append('user', q);
+    this.$input.value = '';
+
+    if (!this._props.apiKey) {
+      this._append('bot', '⚠️ API key not set. Open the Builder panel to configure.');
+      return;
+    }
+
+    try {
+      // Build dataset context (schema + small preview)
+      const dsContext = this._buildDatasetContext({ maxRowsPerSet: 15, maxCharsTotal: 8000 });
+
+      const system = [
+        this._props.systemPrompt || 'You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud.',
+        '',
+        dsContext
+      ].join('\n');
+
+      const body = {
+        model: this._props.model || 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: q }
+        ],
+        temperature: 0.2
+      };
+      console.log('openAI prompt', JSON.stringify(body));
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this._props.apiKey}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`${res.status} ${res.statusText}: ${txt}`);
+      }
+
+      const data = await res.json();
+      const ans = data.choices?.[0]?.message?.content || '(No content)';
+      this._append('bot', ans);
+    } catch (e) {
+      this._append('bot', `❌ ${e.message}`);
+    }
+  }
+
   }
 
   if (!customElements.get('perci-bot')) {
