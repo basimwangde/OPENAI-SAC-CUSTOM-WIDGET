@@ -167,10 +167,11 @@
       // If first render and datasets exist, nudge the user
       if (!this.$chat.innerHTML) {
         if (this._props.welcomeText) this._append('bot', this._props.welcomeText);
-        if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
+        
+      }
+      if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
           this._append('bot', 'Datasets received. Ready to answer any analytical questions!');
         }
-      }
     }
 
     // SAC will call this for custom methods defined in JSON

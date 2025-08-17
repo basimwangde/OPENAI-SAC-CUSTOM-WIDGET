@@ -44,12 +44,18 @@
   },
 
   "methods": {
-    "setDatasets": {
-    "description": "Attach datasets (JSON string with { name:{schema,types,rows2D}... }).",
-    "parameters": [{
-      "payload": { "type": "string" }
-    }]
-  }
+    "setDatasets": 
+    {
+      "description": "Attach datasets (JSON string with { name:{schema,types,rows2D}... }).",
+      "parameters": [
+        {
+        "name": "payload",
+        "type":"string",
+        "description": "datasets (JSON string with { name:{schema,types,rows2D}... })."
+        }
+      ],
+      "body": "this.datasets = payload;"
+    }
 
    },
   "events":  { }
