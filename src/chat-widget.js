@@ -112,7 +112,7 @@
           rebuilt[name] = { schema, rows, rows2D };
         });
         this._datasets = rebuilt;
-
+        console.log('datasets',this._datasets);
         const tag = Object.entries(this._datasets)
           .map(([k, v]) => `${k}: ${v.rows?.length || 0} rows`)
           .join(' · ');
