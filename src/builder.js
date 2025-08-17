@@ -113,8 +113,7 @@
 
       this.keys = [
         'apiKey','model','systemPrompt','welcomeText',
-        'primaryColor','primaryDark','surfaceColor','surfaceAlt','textColor',
-        'linkId'
+        'primaryColor','primaryDark','surfaceColor','surfaceAlt','textColor'
       ];
       this.inputs = this.keys.map(k => this.$(k));
 
@@ -211,8 +210,7 @@
         primaryDark:  p.primaryDark ?? '#163a8a',
         surfaceColor: p.surfaceColor ?? '#ffffff',
         surfaceAlt:   p.surfaceAlt ?? '#f6f8ff',
-        textColor:    p.textColor ?? '#0b1221',
-        linkId: p.linkId ?? ''
+        textColor:    p.textColor ?? '#0b1221'
       };
 
       this.keys.forEach(k => { if (this.$(k)) this.$(k).value = this._props[k]; });
@@ -251,8 +249,7 @@
         primaryDark:  get('primaryDark'),
         surfaceColor: get('surfaceColor'),
         surfaceAlt:   get('surfaceAlt'),
-        textColor:    get('textColor'),
-        linkId:       get('linkId')
+        textColor:    get('textColor')
       };
     }
 
@@ -269,9 +266,6 @@
       this._initial = { ...props };  // new baseline
       this._setDirty(false);
       this._toast('Saved');
-      window.dispatchEvent(new CustomEvent('percibot-config-broadcast', {
-        detail: { linkId: (props.linkId || '').trim(), props: { ...props }, _source: 'config' }
-        }));
     }
 
     _reset() {
@@ -283,9 +277,6 @@
         composed: true
      }));
       this._setDirty(false);
-      window.dispatchEvent(new CustomEvent('percibot-config-broadcast', {
-        detail: { linkId: (this._initial.linkId || '').trim(), props: { ...this._initial }, _source: 'config' }
-        }));
     }
 
     _toast(msg) {
