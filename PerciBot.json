@@ -45,10 +45,10 @@
 
   "methods": {
     "setDatasets": {
-      "description": "Attach datasets (JSON string with { name:{schema,types,rows2D}... }).",
-      "parameters": {
-        "payload": { "type": "string" }
-    }
+    "description": "Attach datasets (JSON string with { name:{schema,types,rows2D}... }).",
+    "parameters": [{
+      "payload": { "type": "string" }
+    }]
   }
 
    },

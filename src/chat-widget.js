@@ -176,13 +176,26 @@
 
     // SAC will call this for custom methods defined in JSON
     onCustomWidgetRequest(methodName, params) {
-      if (methodName === 'setDatasets') {
-        const payload = params && params.payload;
-        if (typeof payload === 'string') {
-          this._applyDatasets(payload);
-        }
+      if (methodName !== 'setDatasets') return;
+
+      // params can be an object {payload: "..."} or an array per some runtimes
+      let payload = '';
+      if (typeof params === 'string') {
+        payload = params;
+      } else if (Array.isArray(params)) {
+        // either ["json"] or [{payload:"json"}]
+        payload = (typeof params[0] === 'string') ? params[0]
+                : (params[0] && params[0].payload) ? params[0].payload
+                : '';
+      } else if (params && typeof params === 'object') {
+        payload = params.payload || '';
+      }
+
+      if (typeof payload === 'string' && payload) {
+        this._applyDatasets(payload);   // your parser from earlier
       }
     }
+
 
 
     setProperties(props) { this.onCustomWidgetAfterUpdate(props); } // SAC older runtimes
