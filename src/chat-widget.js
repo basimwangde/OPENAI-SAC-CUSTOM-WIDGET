@@ -1,6 +1,6 @@
 /* PerciBot — SAC Chat Widget (Analytic App push mode: receives datasets via setProperties) */
-(function () {
-  const tpl = document.createElement('template');
+;(function () {
+  const tpl = document.createElement('template')
   tpl.innerHTML = `
     <style>
       :host { display:block; height:100%; font:14px/1.45 var(--sapFontFamily, "72", Arial); color:#0b1221 }
@@ -31,6 +31,30 @@
       button:disabled{ opacity:.5; cursor:not-allowed }
       .muted{opacity:.7; font-size:12px}
       .footer{display:flex; justify-content:space-between; align-items:center; padding:0 10px 10px}
+
+      .msg.bot p { margin: 6px 0; }
+      .msg.bot ul, .msg.bot ol { padding-left: 20px; margin: 6px 0; }
+      .msg.bot li { margin: 4px 0; }
+      .msg.bot table { border-collapse: collapse; width: 100%; margin: 6px 0; }
+      .msg.bot th, .msg.bot td { border: 1px solid #e7eaf0; padding: 6px 8px; text-align: left; }
+      .msg.bot thead th { background: #f3f6ff; }
+      .msg.bot code { background:#f1f3f7; padding:2px 4px; border-radius:4px; }
+            .msg.bot.typing{ display:inline-flex; align-items:center; gap:8px; }
+      .typing .dots{ display:inline-flex; gap:4px; }
+      .typing .dots span{
+        width:6px; height:6px; border-radius:50%;
+        background:#c7ccd8; display:inline-block;
+        animation: percibot-blink 1s infinite ease-in-out;
+      }
+      .typing .dots span:nth-child(2){ animation-delay:.15s }
+      .typing .dots span:nth-child(3){ animation-delay:.30s }
+
+      @keyframes percibot-blink{
+        0%{ opacity:.2; transform:translateY(0) }
+        20%{ opacity:1; transform:translateY(-2px) }
+        100%{ opacity:.2; transform:translateY(0) }
+      }
+
     </style>
     <div class="wrap">
       <header>
@@ -55,295 +79,454 @@
         <div class="muted"><a href="www.percipere.co">Percipere Consulting</a></div>
       </div>
     </div>
-  `;
+  `
 
   class PerciBot extends HTMLElement {
     constructor () {
-      super();
-      this._shadowRoot = this.attachShadow({ mode: 'open' });
-      this._shadowRoot.appendChild(tpl.content.cloneNode(true));
-      this.$ = (id) => this._shadowRoot.getElementById(id);
+      super()
+      this._shadowRoot = this.attachShadow({ mode: 'open' })
+      this._shadowRoot.appendChild(tpl.content.cloneNode(true))
+      this.$ = id => this._shadowRoot.getElementById(id)
 
-      this.$chat  = this.$('chat');
-      this.$input = this.$('input');
-      this.$send  = this.$('send');
-      this.$clear = this.$('clear');
-      this.$modelChip = this.$('modelChip');
-      this.$hint = this.$('hint');
+      this.$chat = this.$('chat')
+      this.$input = this.$('input')
+      this.$send = this.$('send')
+      this.$clear = this.$('clear')
+      this.$modelChip = this.$('modelChip')
+      this.$hint = this.$('hint')
 
-      this.$send.addEventListener('click', () => this._send());
-      this.$clear.addEventListener('click', () => (this.$chat.innerHTML = ''));
+      this.$send.addEventListener('click', () => this._send())
+      this.$clear.addEventListener('click', () => (this.$chat.innerHTML = ''))
 
       this._props = {
         apiKey: '',
         model: 'gpt-3.5-turbo',
-        systemPrompt: 'You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud.',
+        systemPrompt:
+          'You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud.',
         welcomeText: 'Hello, I’m PerciBot! How can I assist you?',
-        datasets: '',   // JSON string pushed from Analytic App: { Sales:{schema:[],rows:[]}, ... }
+        datasets: '', // JSON string pushed from Analytic App: { Sales:{schema:[],rows:[]}, ... }
         // theme
         primaryColor: '#1f4fbf',
-        primaryDark:  '#163a8a',
+        primaryDark: '#163a8a',
         surfaceColor: '#ffffff',
-        surfaceAlt:   '#f6f8ff',
-        textColor:    '#0b1221'
-      };
-      this._datasets = {}; // parsed datasets
+        surfaceAlt: '#f6f8ff',
+        textColor: '#0b1221'
+      }
+      this._datasets = {} // parsed datasets
     }
 
-    connectedCallback() {
+    connectedCallback () {
       if (!this.$chat.innerHTML && this._props.welcomeText) {
-        this._append('bot', this._props.welcomeText);
+        this._append('bot', this._props.welcomeText)
       }
     }
 
-
-    _applyDatasets(jsonStr) {
+    _applyDatasets (jsonStr) {
       try {
-        const raw = JSON.parse(jsonStr || '{}') || {};
-        const rebuilt = {};
+        const raw = JSON.parse(jsonStr || '{}') || {}
+        const rebuilt = {}
         Object.keys(raw).forEach(name => {
-          const { schema = [], rows2D = [] } = raw[name] || {};
+          const { schema = [], rows2D = [] } = raw[name] || {}
           const rows = rows2D.map(arr => {
-            const o = {};
-            for (let i = 0; i < schema.length; i++) o[schema[i]] = arr[i];
-            return o;
-          });
-          rebuilt[name] = { schema, rows, rows2D };
-        });
-        this._datasets = rebuilt;
-        console.log('datasets',this._datasets);
+            const o = {}
+            for (let i = 0; i < schema.length; i++) o[schema[i]] = arr[i]
+            return o
+          })
+          rebuilt[name] = { schema, rows, rows2D }
+        })
+        this._datasets = rebuilt
+        console.log('datasets', this._datasets)
         const tag = Object.entries(this._datasets)
           .map(([k, v]) => `${k}: ${v.rows?.length || 0} rows`)
-          .join(' · ');
-        this.$modelChip.textContent = tag || 'AI Assistant';
+          .join(' · ')
+        this.$modelChip.textContent = tag || 'AI Assistant'
 
         // nice first-time nudge
         if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
-          this._append('bot', 'Datasets received. Ready to answer any analytical questions! ');
+          this._append(
+            'bot',
+            'Datasets received. Ready to answer any analytical questions! '
+          )
         }
       } catch (e) {
-        this._datasets = {};
-        this.$modelChip.textContent = 'AI Assistant';
+        this._datasets = {}
+        this.$modelChip.textContent = 'AI Assistant'
       }
     }
 
-
-    onCustomWidgetAfterUpdate(changedProps = {}) {
-      Object.assign(this._props, changedProps);
-      this._applyTheme();
-      console.log('datasets',changedProps);
+    onCustomWidgetAfterUpdate (changedProps = {}) {
+      Object.assign(this._props, changedProps)
+      this._applyTheme()
+      console.log('datasets', changedProps)
       // Show API key hint
-      this.$hint.textContent = this._props.apiKey ? '' : 'API key not set – open Builder to configure';
+      this.$hint.textContent = this._props.apiKey
+        ? ''
+        : 'API key not set – open Builder to configure'
 
       // Parse pushed datasets (if any)
       if (typeof changedProps.datasets === 'string') {
-      try {
-        const parsed = JSON.parse(changedProps.datasets || '{}') || {};
-        // reconstruct rows as array of objects for convenience
-        const rebuilt = {};
-        Object.keys(parsed).forEach(name => {
-          const { schema = [], rows2D = [] } = parsed[name] || {};
-          const rows = rows2D.map(arr => {
-            const obj = {};
-            for (let i=0;i<schema.length;i++) obj[schema[i]] = arr[i];
-            return obj;
-          });
-          rebuilt[name] = { schema, rows, rows2D };
-        });
-        this._datasets = rebuilt;
+        try {
+          const parsed = JSON.parse(changedProps.datasets || '{}') || {}
+          // reconstruct rows as array of objects for convenience
+          const rebuilt = {}
+          Object.keys(parsed).forEach(name => {
+            const { schema = [], rows2D = [] } = parsed[name] || {}
+            const rows = rows2D.map(arr => {
+              const obj = {}
+              for (let i = 0; i < schema.length; i++) obj[schema[i]] = arr[i]
+              return obj
+            })
+            rebuilt[name] = { schema, rows, rows2D }
+          })
+          this._datasets = rebuilt
 
-        const tag = Object.entries(this._datasets)
-          .map(([k,v]) => `${k}: ${(v?.rows?.length||0)} rows`)
-          .join(' · ');
-        this.$modelChip.textContent = tag || 'AI Assistant';
-      } catch {
-        this._datasets = {};
-        this.$modelChip.textContent = 'AI Assistant';
-      }
-    } else if (!this.$modelChip.textContent) {
-        this.$modelChip.textContent = 'AI Assistant';
+          const tag = Object.entries(this._datasets)
+            .map(([k, v]) => `${k}: ${v?.rows?.length || 0} rows`)
+            .join(' · ')
+          this.$modelChip.textContent = tag || 'AI Assistant'
+        } catch {
+          this._datasets = {}
+          this.$modelChip.textContent = 'AI Assistant'
+        }
+      } else if (!this.$modelChip.textContent) {
+        this.$modelChip.textContent = 'AI Assistant'
       }
 
       // If first render and datasets exist, nudge the user
       if (!this.$chat.innerHTML) {
-        if (this._props.welcomeText) this._append('bot', this._props.welcomeText);
-        
+        if (this._props.welcomeText)
+          this._append('bot', this._props.welcomeText)
       }
       if (this.$chat.innerHTML && Object.keys(this._datasets).length > 0) {
-          this._append('bot', 'Datasets received. Ready to answer any analytical questions!');
-        }
+        this._append(
+          'bot',
+          'Datasets received. Ready to answer any analytical questions!'
+        )
+      }
     }
 
     // SAC will call this for custom methods defined in JSON
-    onCustomWidgetRequest(methodName, params) {
-      console.log('onCustomWidgetRequest',params);
-      if (methodName !== 'setDatasets') return;
-      console.log(params);
-      let payload = '';
+    onCustomWidgetRequest (methodName, params) {
+      console.log('onCustomWidgetRequest', params)
+      if (methodName !== 'setDatasets') return
+      console.log(params)
+      let payload = ''
       if (typeof params === 'string') {
-        payload = params;
+        payload = params
       } else if (Array.isArray(params)) {
         // parameters listed in the JSON → SAC passes an array in that order
-        payload = params[0] || '';
+        payload = params[0] || ''
       } else if (params && typeof params === 'object') {
         // some runtimes send a map
-        payload = params.payload || '';
+        payload = params.payload || ''
       }
 
-      if (payload) this._applyDatasets(payload);
+      if (payload) this._applyDatasets(payload)
     }
 
+    setProperties (props) {
+      this.onCustomWidgetAfterUpdate(props)
+    } // SAC older runtimes
 
+    _applyTheme () {
+      const wrap = this._shadowRoot.querySelector('.wrap')
+      const header = this._shadowRoot.querySelector('header')
+      const panel = this._shadowRoot.querySelector('.panel')
+      const buttons = this._shadowRoot.querySelectorAll('button.primary')
 
-
-    setProperties(props) { this.onCustomWidgetAfterUpdate(props); } // SAC older runtimes
-
-    _applyTheme() {
-      const wrap = this._shadowRoot.querySelector('.wrap');
-      const header = this._shadowRoot.querySelector('header');
-      const panel = this._shadowRoot.querySelector('.panel');
-      const buttons = this._shadowRoot.querySelectorAll('button.primary');
-
-      wrap.style.background = this._props.surfaceColor || '#ffffff';
-      wrap.style.color = this._props.textColor || '#0b1221';
-      panel.style.background = this._props.surfaceAlt || '#f6f8ff';
-      header.style.background = `linear-gradient(90deg, ${this._props.primaryColor || '#1f4fbf'}, ${this._props.primaryDark || '#163a8a'})`;
+      wrap.style.background = this._props.surfaceColor || '#ffffff'
+      wrap.style.color = this._props.textColor || '#0b1221'
+      panel.style.background = this._props.surfaceAlt || '#f6f8ff'
+      header.style.background = `linear-gradient(90deg, ${
+        this._props.primaryColor || '#1f4fbf'
+      }, ${this._props.primaryDark || '#163a8a'})`
 
       buttons.forEach(btn => {
-        btn.style.background = `linear-gradient(90deg, ${this._props.primaryColor || '#1f4fbf'}, ${this._props.primaryDark || '#163a8a'})`;
-      });
+        btn.style.background = `linear-gradient(90deg, ${
+          this._props.primaryColor || '#1f4fbf'
+        }, ${this._props.primaryDark || '#163a8a'})`
+      })
     }
 
-    _append(role, text) {
-      const b = document.createElement('div');
-      b.className = `msg ${role === 'user' ? 'user' : 'bot'}`;
-      b.textContent = text;
-      if (role === 'user') {
-        b.style.background = '#97cdf2ff';
-        b.style.border = '1px solid #e7eaf0';
-        b.style.color = this._props.textColor || '#0b1221';
-      } else {
-        b.style.background = '#ffffff';
-        b.style.border = '1px solid #e7eaf0';
-        b.style.color = this._props.textColor || '#0b1221';
-      }
-      this.$chat.appendChild(b);
-      this.$chat.scrollTop = this.$chat.scrollHeight;
+    _escapeHtml (s = '') {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
     }
 
-      _buildDatasetContext(opts = {}) {
-    const maxRowsPerSet = Number(opts.maxRowsPerSet ?? 5);
-    const maxCharsTotal = Number(opts.maxCharsTotal ?? 8000);
+    _mdLists (md) {
+      // Convert contiguous lines of "-" or "*" to <ul>
+      const lines = md.split('\n')
+      const out = []
+      let inUl = false,
+        inOl = false
 
-    const lines = [];
-    lines.push('You have access to the following datasets. Use ONLY these when answering analytics questions:');
-
-    const entries = Object.entries(this._datasets || {});
-    if (!entries.length) {
-      lines.push('(No datasets provided.)');
-      return lines.join('\n');
-    }
-
-    for (const [name, ds] of entries) {
-      const schema = (ds?.schema || []).join(', ');
-      const total = ds?.rows?.length || 0;
-      const preview = (ds?.rows || []).slice(0, maxRowsPerSet);
-
-      lines.push(`\n[DATASET] ${name}`);
-      lines.push(`- Columns: ${schema || '(none)'}`);
-      lines.push(`- Total Rows: ${total}`);
-      if (preview.length) {
-        lines.push(`- Preview (first ${preview.length} rows):`);
-        for (let i = 0; i < preview.length; i++) {
-          // safe, compact row print
-          const row = preview[i];
-          const compact = Object.keys(row).reduce((acc, k) => {
-            const v = row[k];
-            // stringify lightly; trim long strings
-            let s = (v === null || v === undefined) ? '' : String(v);
-            if (s.length > 120) s = s.slice(0, 117) + '...';
-            acc[k] = s;
-            return acc;
-          }, {});
-          lines.push(`  - ${JSON.stringify(compact)}`);
+      const flush = () => {
+        if (inUl) {
+          out.push('</ul>')
+          inUl = false
         }
+        if (inOl) {
+          out.push('</ol>')
+          inOl = false
+        }
+      }
+
+      for (const line of lines) {
+        if (/^\s*[-*]\s+/.test(line)) {
+          if (!inUl) {
+            flush()
+            out.push('<ul>')
+            inUl = true
+          }
+          out.push(
+            `<li>${this._mdInline(line.replace(/^\s*[-*]\s+/, ''))}</li>`
+          )
+        } else if (/^\s*\d+\.\s+/.test(line)) {
+          if (!inOl) {
+            flush()
+            out.push('<ol>')
+            inOl = true
+          }
+          out.push(
+            `<li>${this._mdInline(line.replace(/^\s*\d+\.\s+/, ''))}</li>`
+          )
+        } else if (line.trim() === '') {
+          flush()
+          out.push('<br/>')
+        } else {
+          flush()
+          out.push(`<p>${this._mdInline(line)}</p>`)
+        }
+      }
+      flush()
+      return out.join('')
+    }
+
+    _mdTable (block) {
+      // Very small table parser for GitHub-style tables
+      // header | header2
+      // ------ | -------
+      // cell   | cell2
+      const rows = block.trim().split('\n').filter(Boolean)
+      if (rows.length < 2) return null
+      const hasSep = /^\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+$/.test(
+        rows[1].trim()
+      )
+      if (!hasSep) return null
+
+      const toCells = line => line.split('|').map(c => this._mdInline(c.trim()))
+      const head = toCells(rows[0])
+      const bodyRows = rows.slice(2).map(toCells)
+
+      const ths = head.map(h => `<th>${h}</th>`).join('')
+      const trs = bodyRows
+        .map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`)
+        .join('')
+      return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`
+    }
+
+    _mdInline (s) {
+      // Escape, then apply inline markdown
+      let t = this._escapeHtml(s)
+      t = t.replace(/`([^`]+)`/g, '<code>$1</code>')
+      t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      t = t.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      return t
+    }
+
+    _renderMarkdown (md = '') {
+      // Detect simple tables first (blocks separated by blank lines)
+      const blocks = md.split(/\n{2,}/)
+      const html = blocks
+        .map(b => {
+          const maybe = this._mdTable(b)
+          return maybe ? maybe : this._mdLists(b)
+        })
+        .join('\n')
+      return html
+    }
+
+    _append (role, text) {
+      const b = document.createElement('div')
+      b.className = `msg ${role === 'user' ? 'user' : 'bot'}`
+
+      // Render
+      if (role === 'user') {
+        b.textContent = text // keep user text literal
       } else {
-        lines.push(`- Preview: (no rows)`);
+        b.innerHTML = this._renderMarkdown(String(text || ''))
       }
 
-      // stop if we’re near the char budget
-      if (lines.join('\n').length > maxCharsTotal) {
-        lines.push('\n(Context truncated to stay within token limits.)');
-        break;
-      }
-    }
-
-    // a tiny instruction so the model behaves
-    lines.push(`
-Guidelines:
-- Prefer calculations and conclusions implied by the dataset preview and schema.
-- If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
-- Be precise with column names; do not invent fields that aren’t in the schema.`.trim());
-
-    return lines.join('\n');
-  }
-
-
-      async _send() {
-    const q = (this.$input.value || '').trim();
-    if (!q) return;
-    this._append('user', q);
-    this.$input.value = '';
-
-    if (!this._props.apiKey) {
-      this._append('bot', '⚠️ API key not set. Open the Builder panel to configure.');
-      return;
-    }
-
-    try {
-      // Build dataset context (schema + small preview)
-      const dsContext = this._buildDatasetContext({ maxRowsPerSet: 50, maxCharsTotal: 8000 });
-
-      const system = [
-        this._props.systemPrompt || 'You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud.',
-        '',
-        dsContext
-      ].join('\n');
-
-      const body = {
-        model: this._props.model || 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: q }
-        ],
-        temperature: 0.2
-      };
-      console.log('openAI prompt', JSON.stringify(body));
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this._props.apiKey}`
-        },
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`${res.status} ${res.statusText}: ${txt}`);
+      if (role === 'user') {
+        b.style.background = '#97cdf2ff'
+        b.style.border = '1px solid #e7eaf0'
+        b.style.color = this._props.textColor || '#0b1221'
+      } else {
+        b.style.background = '#ffffff'
+        b.style.border = '1px solid #e7eaf0'
+        b.style.color = this._props.textColor || '#0b1221'
       }
 
-      const data = await res.json();
-      const ans = data.choices?.[0]?.message?.content || '(No content)';
-      this._append('bot', ans);
-    } catch (e) {
-      this._append('bot', `❌ ${e.message}`);
+      this.$chat.appendChild(b)
+      this.$chat.scrollTop = this.$chat.scrollHeight
     }
-  }
 
+    _buildDatasetContext (opts = {}) {
+      const maxRowsPerSet = Number(opts.maxRowsPerSet ?? 5)
+      const maxCharsTotal = Number(opts.maxCharsTotal ?? 8000)
+
+      const lines = []
+      lines.push(
+        'You have access to the following datasets. Use ONLY these when answering analytics questions:'
+      )
+
+      const entries = Object.entries(this._datasets || {})
+      if (!entries.length) {
+        lines.push('(No datasets provided.)')
+        return lines.join('\n')
+      }
+
+      for (const [name, ds] of entries) {
+        const schema = (ds?.schema || []).join(', ')
+        const total = ds?.rows?.length || 0
+        const preview = (ds?.rows || []).slice(0, maxRowsPerSet)
+
+        lines.push(`\n[DATASET] ${name}`)
+        lines.push(`- Columns: ${schema || '(none)'}`)
+        lines.push(`- Total Rows: ${total}`)
+        if (preview.length) {
+          lines.push(`- Preview (first ${preview.length} rows):`)
+          for (let i = 0; i < preview.length; i++) {
+            // safe, compact row print
+            const row = preview[i]
+            const compact = Object.keys(row).reduce((acc, k) => {
+              const v = row[k]
+              // stringify lightly; trim long strings
+              let s = v === null || v === undefined ? '' : String(v)
+              if (s.length > 120) s = s.slice(0, 117) + '...'
+              acc[k] = s
+              return acc
+            }, {})
+            lines.push(`  - ${JSON.stringify(compact)}`)
+          }
+        } else {
+          lines.push(`- Preview: (no rows)`)
+        }
+
+        // stop if we’re near the char budget
+        if (lines.join('\n').length > maxCharsTotal) {
+          lines.push('\n(Context truncated to stay within token limits.)')
+          break
+        }
+      }
+
+      // a tiny instruction so the model behaves
+      lines.push(
+        `
+      Guidelines:
+      - Prefer calculations and conclusions implied by the dataset preview and schema.
+      - If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
+      - Be precise with column names; do not invent fields that aren’t in the schema.`.trim()
+      )
+
+      return lines.join('\n')
+    }
+
+    _startTyping () {
+      if (this._typingEl) return // avoid duplicates
+      const b = document.createElement('div')
+      b.className = 'msg bot typing'
+      b.innerHTML = `<span class="muted">PerciBOT</span><span class="dots"><span></span><span></span><span></span></span>`
+      // style like bot bubble
+      b.style.background = '#ffffff'
+      b.style.border = '1px solid #e7eaf0'
+      b.style.color = this._props.textColor || '#0b1221'
+
+      this.$chat.appendChild(b)
+      this.$chat.scrollTop = this.$chat.scrollHeight
+      this._typingEl = b
+    }
+
+    _stopTyping () {
+      if (this._typingEl && this._typingEl.parentNode) {
+        this._typingEl.parentNode.removeChild(this._typingEl)
+      }
+      this._typingEl = null
+    }
+
+    async _send () {
+      const q = (this.$input.value || '').trim()
+      if (!q) return
+      this._append('user', q)
+      this.$input.value = ''
+
+      if (!this._props.apiKey) {
+        this._append(
+          'bot',
+          '⚠️ API key not set. Open the Builder panel to configure.'
+        )
+        return
+      }
+
+      // show typing indicator + lock UI
+      this._startTyping()
+      this.$send.disabled = true
+
+      try {
+        // Build dataset context (schema + small preview)
+        const dsContext = this._buildDatasetContext({
+          maxRowsPerSet: 50,
+          maxCharsTotal: 8000
+        })
+
+        const system = [
+          this._props.systemPrompt ||
+            'You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud.',
+          '',
+          dsContext,
+          '',
+          'When responding, prefer Markdown with **bold** labels, bullet points, and small tables for comparisons. Keep it concise and executive-friendly.'
+        ].join('\n')
+
+        const body = {
+          model: this._props.model || 'gpt-3.5-turbo',
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: q }
+          ],
+          temperature: 0.2
+        }
+        console.log('openAI prompt', JSON.stringify(body))
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this._props.apiKey}`
+          },
+          body: JSON.stringify(body)
+        })
+
+        if (!res.ok) {
+          const txt = await res.text()
+          throw new Error(`${res.status} ${res.statusText}: ${txt}`)
+        }
+
+        const data = await res.json()
+        const ans = data.choices?.[0]?.message?.content || '(No content)'
+        this._stopTyping()
+        this._append('bot', ans)
+      } catch (e) {
+        this._stopTyping()
+        this._append('bot', `❌ ${e.message}`)
+      } finally {
+        this.$send.disabled = false
+      }
+    }
   }
 
   if (!customElements.get('perci-bot')) {
-    customElements.define('perci-bot', PerciBot);
+    customElements.define('perci-bot', PerciBot)
   }
-})();
+})()
