@@ -67,11 +67,29 @@
         100%{ opacity:.2; transform:translateY(0) }
       }
 
+            header{ position:relative; } /* anchor for drawer */
+      .chip{ cursor:pointer; }
+
+      #dsDrawer{
+        position:absolute; right:14px; top:58px; z-index:10;
+        max-width:420px; max-height:240px; overflow:auto;
+        background:#fff; border:1px solid #e7eaf0; border-radius:10px;
+        box-shadow:0 12px 28px rgba(0,0,0,.12); padding:10px; font-size:12px; display:none;
+      }
+      #dsDrawer .ds{padding:6px 4px; border-bottom:1px dashed #eee;}
+      #dsDrawer .ds:last-child{border-bottom:none;}
+      #dsDrawer .name{font-weight:700;}
+
+      .panel { position:relative; }
+      .msg.bot.typing{ position:sticky; bottom:0; }
+
     </style>
     <div class="wrap">
       <header>
         <div class="brand">PerciBOT</div>
         <div class="chip" id="modelChip"></div>
+        <div id="dsDrawer"></div>
+
       </header>
 
       <div class="body">
@@ -131,6 +149,11 @@
       if (!this.$chat.innerHTML && this._props.welcomeText) {
         this._append('bot', this._props.welcomeText)
       }
+
+      this.$modelChip.addEventListener('click', () => {
+        const d = this._shadowRoot.getElementById('dsDrawer');
+        d.style.display = (d.style.display === 'none' || !d.style.display) ? 'block' : 'none';
+      });
     }
 
     _applyDatasets (jsonStr) {
@@ -151,7 +174,10 @@
         const tag = Object.entries(this._datasets)
           .map(([k, v]) => `${k}: ${v.rows?.length || 0} rows`)
           .join(' · ')
-        this.$modelChip.textContent = tag || 'AI Assistant'
+        // this.$modelChip.textContent = tag || 'AI Assistant'
+
+        this._updateDatasetsUI();
+
 
         // nice first-time nudge
         if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
@@ -162,7 +188,9 @@
         }
       } catch (e) {
         this._datasets = {}
-        this.$modelChip.textContent = 'AI Assistant'
+        // this.$modelChip.textContent = 'AI Assistant'
+        this._updateDatasetsUI();
+
       }
     }
 
@@ -195,13 +223,16 @@
           const tag = Object.entries(this._datasets)
             .map(([k, v]) => `${k}: ${v?.rows?.length || 0} rows`)
             .join(' · ')
-          this.$modelChip.textContent = tag || 'AI Assistant'
+          // this.$modelChip.textContent = tag || 'AI Assistant'
+          this._updateDatasetsUI();
         } catch {
           this._datasets = {}
-          this.$modelChip.textContent = 'AI Assistant'
+          // this.$modelChip.textContent = 'AI Assistant'
+          this._updateDatasetsUI();
         }
       } else if (!this.$modelChip.textContent) {
-        this.$modelChip.textContent = 'AI Assistant'
+        // this.$modelChip.textContent = 'AI Assistant'
+        this._updateDatasetsUI();
       }
 
       // If first render and datasets exist, nudge the user
@@ -316,28 +347,35 @@
       return out.join('')
     }
 
-    _mdTable (block) {
-      // Very small table parser for GitHub-style tables
-      // header | header2
-      // ------ | -------
-      // cell   | cell2
-      const rows = block.trim().split('\n').filter(Boolean)
-      if (rows.length < 2) return null
-      const hasSep = /^\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+$/.test(
-        rows[1].trim()
-      )
-      if (!hasSep) return null
+      _mdTable(block) {
+    // Normalize: trim, then remove leading/trailing pipes on each line
+    const raw = block.trim().split('\n').filter(Boolean);
+    if (raw.length < 2) return null;
 
-      const toCells = line => line.split('|').map(c => this._mdInline(c.trim()))
-      const head = toCells(rows[0])
-      const bodyRows = rows.slice(2).map(toCells)
+    const norm = raw.map(line =>
+      line.replace(/^\s*\|\s*/, '').replace(/\s*\|\s*$/, '')
+    );
 
-      const ths = head.map(h => `<th>${h}</th>`).join('')
-      const trs = bodyRows
-        .map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`)
-        .join('')
-      return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`
-    }
+    // Separator row must be --- (optionally with :) in each cell
+    const sepCells = norm[1].split('|').map(s => s.trim());
+    const sepOk = sepCells.length > 0 && sepCells.every(c => /^:?-{3,}:?$/.test(c));
+    if (!sepOk) return null;
+
+    const toCells = (line) =>
+      line.split('|')
+        .map(c => c.trim())
+        .filter(c => c.length > 0)             // drop empties from edge pipes
+        .map(c => this._mdInline(c));
+
+    const head = toCells(norm[0]);
+    const bodyRows = norm.slice(2).map(toCells);
+
+    const ths = head.map(h => `<th>${h}</th>`).join('');
+    const trs = bodyRows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+
+    return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+  }
+
 
     _mdInline (s) {
       // Escape, then apply inline markdown
@@ -359,6 +397,27 @@
         .join('\n')
       return html
     }
+
+      _updateDatasetsUI() {
+    const chip = this.$modelChip;
+    const drawer = this._shadowRoot.getElementById('dsDrawer');
+    const entries = Object.entries(this._datasets || {});
+    if (!entries.length) { chip.textContent = 'AI Assistant'; drawer.style.display = 'none'; return; }
+
+    // Chip text
+    const parts = entries.map(([k,v]) => `${k}: ${v.rows?.length || 0} rows`);
+    chip.textContent = parts.length > 2
+      ? `${parts.slice(0,2).join(' · ')} · +${parts.length-2} more`
+      : parts.join(' · ');
+
+    // Drawer content
+    const html = entries.map(([name, ds]) => {
+      const cols = (ds.schema || []).slice(0, 12).join(', ');
+      return `<div class="ds"><div class="name">${name}</div><div>${ds.rows?.length || 0} rows</div><div>${cols}</div></div>`;
+    }).join('') || '<div class="ds">No datasets</div>';
+    drawer.innerHTML = html;
+  }
+
 
     _append (role, text) {
       const b = document.createElement('div')
