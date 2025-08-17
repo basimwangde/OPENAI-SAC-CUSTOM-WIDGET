@@ -67,13 +67,6 @@
           </div>
         </div>
       </div>
-
-      <div class="f">
-        <label>Link ID (pair with Data-Bound widget)</label>
-        <input id="linkId" type="text" placeholder="e.g. sales-1" />
-      </div>
-
-
       <div class="section">
         <div class="title">Behavior</div>
         <div class="f">
