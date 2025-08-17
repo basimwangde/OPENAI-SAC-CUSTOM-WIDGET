@@ -177,24 +177,21 @@
     // SAC will call this for custom methods defined in JSON
     onCustomWidgetRequest(methodName, params) {
       if (methodName !== 'setDatasets') return;
-
-      // params can be an object {payload: "..."} or an array per some runtimes
+      console.log(params);
       let payload = '';
       if (typeof params === 'string') {
         payload = params;
       } else if (Array.isArray(params)) {
-        // either ["json"] or [{payload:"json"}]
-        payload = (typeof params[0] === 'string') ? params[0]
-                : (params[0] && params[0].payload) ? params[0].payload
-                : '';
+        // parameters listed in the JSON → SAC passes an array in that order
+        payload = params[0] || '';
       } else if (params && typeof params === 'object') {
+        // some runtimes send a map
         payload = params.payload || '';
       }
 
-      if (typeof payload === 'string' && payload) {
-        this._applyDatasets(payload);   // your parser from earlier
-      }
+      if (payload) this._applyDatasets(payload);
     }
+
 
 
 
