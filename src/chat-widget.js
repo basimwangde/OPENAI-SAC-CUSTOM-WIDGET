@@ -87,7 +87,7 @@
         surfaceAlt:   '#f6f8ff',
         textColor:    '#0b1221'
       };
-
+      this.payload = '';
       this._datasets = {}; // parsed datasets
     }
 
