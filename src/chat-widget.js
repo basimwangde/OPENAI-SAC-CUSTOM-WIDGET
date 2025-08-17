@@ -97,6 +97,38 @@
       }
     }
 
+
+    _applyDatasets(jsonStr) {
+      try {
+        const raw = JSON.parse(jsonStr || '{}') || {};
+        const rebuilt = {};
+        Object.keys(raw).forEach(name => {
+          const { schema = [], rows2D = [] } = raw[name] || {};
+          const rows = rows2D.map(arr => {
+            const o = {};
+            for (let i = 0; i < schema.length; i++) o[schema[i]] = arr[i];
+            return o;
+          });
+          rebuilt[name] = { schema, rows, rows2D };
+        });
+        this._datasets = rebuilt;
+
+        const tag = Object.entries(this._datasets)
+          .map(([k, v]) => `${k}: ${v.rows?.length || 0} rows`)
+          .join(' · ');
+        this.$modelChip.textContent = tag || 'AI Assistant';
+
+        // nice first-time nudge
+        if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
+          this._append('bot', 'Datasets received. Ready to answer any analytical questions! ');
+        }
+      } catch (e) {
+        this._datasets = {};
+        this.$modelChip.textContent = 'AI Assistant';
+      }
+    }
+
+
     onCustomWidgetAfterUpdate(changedProps = {}) {
       Object.assign(this._props, changedProps);
       this._applyTheme();
@@ -141,6 +173,17 @@
         }
       }
     }
+
+    // SAC will call this for custom methods defined in JSON
+    onCustomWidgetRequest(methodName, params) {
+      if (methodName === 'setDatasets') {
+        const payload = params && params.payload;
+        if (typeof payload === 'string') {
+          this._applyDatasets(payload);
+        }
+      }
+    }
+
 
     setProperties(props) { this.onCustomWidgetAfterUpdate(props); } // SAC older runtimes
 

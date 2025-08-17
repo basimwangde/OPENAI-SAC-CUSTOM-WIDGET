@@ -4,8 +4,8 @@
   "vendor": "Percipere Consulting",
   "id": "com.percipere.sac.percibot",
   "version": "1.0.0",
-  "name": "PerciBot",
-  "newInstancePrefix": "PerciBot",
+  "name": "PerciBOT",
+  "newInstancePrefix": "PerciBOT",
   "description": "Conversational AI assistant for SAP Analytics Cloud powered by OpenAI",
 
   "webcomponents": [
@@ -43,6 +43,14 @@
     "datasets": { "type": "string", "default": "" }
   },
 
-  "methods": { },
+  "methods": {
+    "setDatasets": {
+      "description": "Attach datasets (JSON string with { name:{schema,types,rows2D}... }).",
+      "parameters": {
+        "payload": { "type": "string" }
+    }
+  }
+
+   },
   "events":  { }
 }
