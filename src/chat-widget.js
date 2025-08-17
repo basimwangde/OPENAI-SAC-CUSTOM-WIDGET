@@ -302,7 +302,7 @@ Guidelines:
 
     try {
       // Build dataset context (schema + small preview)
-      const dsContext = this._buildDatasetContext({ maxRowsPerSet: 15, maxCharsTotal: 8000 });
+      const dsContext = this._buildDatasetContext({ maxRowsPerSet: 50, maxCharsTotal: 8000 });
 
       const system = [
         this._props.systemPrompt || 'You are PerciBot, a helpful and concise assistant for SAP Analytics Cloud.',
