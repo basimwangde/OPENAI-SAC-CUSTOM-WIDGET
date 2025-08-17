@@ -11,10 +11,22 @@
       }
       .brand{font-weight:700}
       .chip{font-size:12px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.2)}
-      .body{flex:1; display:flex; flex-direction:column; gap:10px; padding:10px}
+      .body {
+        flex:1;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        padding:10px;
+        min-height:0;  /* important for flex scrolling */
+      }
       .panel{
-        flex:1; overflow:auto; border:1px solid #e7eaf0; border-radius:12px; padding:10px;
-        background:#f7f9fc
+        flex:1;
+        overflow-y:auto;   /* only vertical scrolling */
+        overflow-x:hidden;
+        border:1px solid #e7eaf0;
+        border-radius:12px;
+        padding:10px;
+        background:#f7f9fc;
       }
       .msg{max-width:85%; margin:6px 0; padding:10px 12px; border-radius:14px; box-shadow:0 1px 2px rgba(0,0,0,.04)}
       .user{ margin-left:auto; }
