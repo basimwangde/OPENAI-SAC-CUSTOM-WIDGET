@@ -151,9 +151,10 @@
       }
 
       this.$modelChip.addEventListener('click', () => {
-        const d = this._shadowRoot.getElementById('dsDrawer');
-        d.style.display = (d.style.display === 'none' || !d.style.display) ? 'block' : 'none';
-      });
+        const d = this._shadowRoot.getElementById('dsDrawer')
+        d.style.display =
+          d.style.display === 'none' || !d.style.display ? 'block' : 'none'
+      })
     }
 
     _applyDatasets (jsonStr) {
@@ -176,8 +177,7 @@
           .join(' · ')
         // this.$modelChip.textContent = tag || 'AI Assistant'
 
-        this._updateDatasetsUI();
-
+        this._updateDatasetsUI()
 
         // nice first-time nudge
         if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
@@ -189,15 +189,14 @@
       } catch (e) {
         this._datasets = {}
         // this.$modelChip.textContent = 'AI Assistant'
-        this._updateDatasetsUI();
-
+        this._updateDatasetsUI()
       }
     }
 
     onCustomWidgetAfterUpdate (changedProps = {}) {
       Object.assign(this._props, changedProps)
       this._applyTheme()
-      
+
       console.log('datasets', changedProps)
       // Show API key hint
       this.$hint.textContent = this._props.apiKey
@@ -207,13 +206,11 @@
       // Parse pushed datasets (if any)
       if (typeof changedProps.datasets === 'string') {
         try {
-          
-          if(changedProps.datasets != ''){
-            changedProps.datasets = '{"RESOURCE_UTILIZATION": {"schema": ["Team", "Resource", "FTE Type", "Net Availability (Days)", "Project Billable Days", "Project NB Days", "Internal Time", "Billable Util %", "White Space %", "White Space Days"], "types": ["string", "string", "string", "number", "number", "number", "number", "number", "string", "number"], "rows2D": [["Event management", "Robert Davis", "Part Time", 11.0, 123.5, 0, 0, 11.227, "-1022.73%", -112.5], ["Event management", "Natalie Thompson", "Full Time", 262.0, 80.0, 0, 0, 0.305, "69.47%", 182.0], ["Event management", "Savitha Krishnamurthi", "Part Time", 131.0, 33.0, 0, 0, 0.252, "74.81%", 98.0], ["Event management", "Mykhailo Ivanenko", "Part Time", 131.0, 84.0, 0, 0, 0.641, "35.88%", 47.0], ["Event management", "Laura Lewis", "Full Time", 262.0, 90.0, 0, 0, 0.344, "65.65%", 172.0], ["Event management", "Andrew Allen", "Full Time", 248.0, 69.04, 0, 15.0, 0.278, "66.11%", 163.96], ["Event management", "Samantha Young", "Full Time", 131.0, 127.0, 0, 0, 0.969, "3.05%", 4.0], ["Project Management", "Anna Schmidt", "Part Time", 43.5, 36.0, 2.0, 0, 0.828, "12.64%", 5.5], ["Project Management", "Satish Joshi", "Full Time", 66.0, 48.5, 0, 0, 0.735, "26.52%", 17.5], ["Project Management", "Thomas Wilson", "Full Time", 262.0, 87.0, 0, 0, 0.332, "66.79%", 175.0], ["Project Management", "Christopher Garcia", "Full Time", 0, 78.0, 23.0, 0, 0, null, -101.0], ["Sales", "Olivia Martinez", "Full Time", 0, 2.5, 0, 0, 0, null, -2.5], ["Sales", "Linda Anderson", "Part Time", 131.0, 118.5, 0, 0, 0.905, "9.54%", 12.5], ["Sales", "Kateryna Kravchenko", "Full Time", 262.0, 76.0, 0, 0, 0.29, "70.99%", 186.0], ["Sales", "Andriy Petrov ", "Full Time", 262.0, 6.0, 0, 0, 0.023, "97.71%", 256.0], ["Technology", "Emily Johnson", "Full Time", 262.0, 59.0, 1.0, 0, 0.225, "77.10%", 202.0], ["Technology", "Michael Smith", "Part Time", 76.0, 21.0, 0, 0, 0.276, "72.37%", 55.0], ["Technology", "Sarah Lee", "Full Time", 197.0, 101.0, 0, 0, 0.513, "48.73%", 96.0], ["Technology", "Natalie Hall", "Full Time", 262.0, 65.0, 0, 0, 0.248, "75.19%", 197.0], ["Technology", "Joshua King", "Part Time", 131.0, 34.5, 1.0, 0, 0.263, "72.90%", 95.5]]}, "RESOURCE_REVENUE": {"schema": ["Resource", "Team", "Actual Revenue", "Annual Rev Outlook", "Annual Cost", "Annual Margin", "Annual Margin %"], "types": ["string", "string", "number", "number", "number", "number", "string"], "rows2D": [["Emily Johnson", "Technology", 158017.184, 158017.184, -62618.87042, 95398.31359, "60.37%"], ["Michael Smith", "Technology", 110765.8703, 110765.8703, -28257.25756, 82508.61273, "74.49%"], ["Sarah Lee", "Technology", 421965.2202, 421965.2202, -106071.378, 315893.8422, "74.86%"], ["Anna Schmidt", "Project Management", 55382.93515, 55382.93515, -35543.10098, 19839.83417, "35.82%"], ["Satish Joshi", "Project Management", 211422.1572, 211422.1572, -14325.54347, 197096.6137, "93.22%"], ["Thomas Wilson", "Project Management", 433392.1702, 433392.1702, -94223.67765, 339168.4925, "78.26%"], ["Olivia Martinez", "Sales", 15384.14865, 15384.14865, -3692.150378, 11691.99827, "76.00%"], ["Christopher Garcia", "Project Management", 380353.7353, 380353.7353, -132589.2225, 247764.5129, "65.14%"], ["Linda Anderson", "Sales", 539793.6015, 539793.6015, -155562.6026, 384230.9989, "71.18%"], ["Robert Davis", "Event management", 569578.6319, 569578.6319, -129701.1404, 439877.4915, "77.23%"], ["Natalie Thompson", "Event management", 401745.0424, 401745.0424, -91893.52053, 309851.5219, "77.13%"], ["Savitha Krishnamurthi", "Event management", 151643.751, 151643.751, -10830.30778, 140813.4432, "92.86%"], ["Kateryna Kravchenko", "Sales", 366832.0796, 366832.0796, -64850.5702, 301981.5094, "82.32%"], ["Mykhailo Ivanenko", "Event management", 423136.1737, 423136.1737, -68920.14039, 354216.0333, "83.71%"], ["Laura Lewis", "Event management", 435024.5602, 435024.5602, -93042.18953, 341982.3707, "78.61%"], ["Andriy Petrov ", "Sales", 36921.95676, 36921.95676, -5218.239202, 31703.71756, "85.87%"], ["Natalie Hall", "Technology", 285705.6178, 285705.6178, -68050.43386, 217655.184, "76.18%"], ["Andrew Allen", "Event management", 329473.1621, 329473.1621, -135138.6113, 194334.5508, "58.98%"], ["Samantha Young", "Event management", 586103.2734, 586103.2734, -120872.7986, 465230.4748, "79.38%"], ["Joshua King", "Technology", 53075.31285, 53075.31285, -33204.73907, 19870.57378, "37.44%"]]}, "PROJECT_REVENUE": {"schema": ["Projects", "Actual Revenue", "Annual Rev Outlook", "Annual Cost", "Annual Margin", "Annual Margin %"], "types": ["string", "number", "number", "number", "number", "string"], "rows2D": [["Utility Week", 518665.5831, 518665.5831, -118493.4128, 400172.1703, "77.15%"], ["Utility Week Flex Awards", 664595.2218, 664595.2218, -216999.9849, 447595.2369, "67.35%"], ["Utility Week Forum", 292298.8244, 292298.8244, -21529.3391, 270769.4853, "92.63%"], ["Women in Utilities Awards", 166148.8054, 166148.8054, -18378.70411, 147770.1013, "88.94%"], ["Drinking Water Europe", 1823173.911, 1823173.911, -423766.3135, 1399407.598, "76.76%"], ["Drinking Water Quality Conference", 116040.4355, 116040.4355, -24007.18224, 92033.25331, "79.31%"], ["Reforming Grid Connections Conference", 1917884.891, 1917884.891, -413980.31, 1503904.581, "78.41%"], ["Water in Mining", 295375.6541, 295375.6541, -64896.51696, 230479.1372, "78.03%"], ["Water and Effluent Treatment News (WET News)", 171533.2575, 171533.2575, -112581.0493, 58952.20813, "34.37%"], ["Sustainable Supply Chains Summit", 0, 0, -20676.04212, -20676.04212, null], ["Annual Leave", 0, 0, -19297.63931, -19297.63931, null]]}, "PROJECTS": {"schema": ["Projects", "Status", "Commercial Type", "Company Name", "Project Budget Days", "Backlog Op Bal", "Total Days - CY", "Expected Backlog for NY", "Total NB Days", "% of NB Days vs B Days", "Total Project Revenue", "Total Project Cost", "Project Margin %", "Day Rate"], "types": ["string", "string", "string", "string", "number", "number", "number", "number", "number", "string", "number", "number", "number", "number"], "rows2D": [["Utility Week", "Ongoing", "Fixed Price", "Faversham Manchester", 200, 200, 118.0, 82.0, 0, null, 724530.9279, -174040.3149, 0.759788978, 6140.09261], ["Utility Week Flex Awards", "Ongoing", "Fixed Price", "Faversham Kharkiv", 120, 120, 168.0, -48.0, 65.0, "38.69%", 717695.2218, -254639.9849, 0.645197603, 4271.995368], ["Utility Week Forum", "Ongoing", "T&M", "Faversham India", 80, 80, 70.0, 10.0, 0, null, 328873.8244, -33266.8391, 0.898846194, 4698.197491], ["Women in Utilities Awards", "Ongoing", "T&M", "Faversham London", 300, 300, 27.0, 273.0, 0, null, 459448.8054, -65426.20411, 0.857598489, 17016.62242], ["Drinking Water Europe", "Ongoing", "Fixed Price", "Faversham India", 700, 700, 382.04, 317.96, 0, null, 2563908.725, -614608.0231, 0.760284749, 6711.100212], ["Drinking Water Quality Conference", "Completed", "T&M", "Faversham Kharkiv", 70, 70, 22.0, 48.0, 0, null, 210840.4355, -50222.18224, 0.761800045, 9583.656161], ["Asset Management & Capital Projects Conference", "Ongoing", "Fixed Price", "Faversham London", 500, 500, 0, 500.0, 0, null, 215650.0, -81724.0, 0.621034083, 0], ["Consumer Vulnerability & Debt Conference", "Ongoing", "Fixed Price", "Faversham London", 160, 160, 0, 160.0, 0, null, 0, 0, 0, 0], ["Reforming Grid Connections Conference", "Ongoing", "Fixed Price", "Faversham Swansea", 750, 750, 385.0, 365.0, 0, null, 2747665.758, -614020.0965, 0.77653028, 7136.794178], ["Heat Networks: Ready for Regulation", "Ongoing", "Fixed Price", "Faversham Swansea", 100, 100, 0, 100.0, 16.0, null, 60000.0, -23467.5, 0.608875, 0], ["Water in Mining", "Ongoing", "Fixed Price", "Faversham Boston", 150, 150, 56.0, 94.0, 1.0, "1.79%", 468403.959, -109537.1309, 0.766148153, 8364.356411], ["Water and Effluent Treatment News (WET News)", "Ongoing", "Fixed Price", "Faversham Manchester", 290, 290, 111.5, 178.5, 4.0, "3.59%", 238944.2055, -165518.6941, 0.30729145, 2142.997359]]}}';
-
-
+          if (changedProps.datasets != '') {
+            changedProps.datasets =
+              '{"TEAM_UTILIZATION": {"schema": ["Team", "Net Availability (Days)", "Project Billable Days", "Project NB Days", "Internal Time", "Billable Util %", "White Space %", "White Space Days"], "types": ["string", "number", "number", "number", "number", "number", "number", "number"], "rows2D": [["Team", 0, 0, 0, 0, 0, 0, 0], ["Event management", 1176.0, 606.54, 0, 15.0, 0.5157653061224489, 0.4714795918367346, 554.46], ["Project Management", 371.5, 249.5, 25.0, 0, 0.6716016150740242, 0.2611036339165545, 97.0], ["Sales", 655.0, 203.0, 0, 0, 0.3099236641221374, 0.6900763358778625, 452.0], ["Technology", 928.0, 280.5, 2.0, 0, 0.3022629310344827, 0.6955818965517241, 645.5]]}, "RESOURCE_UTILIZATION": {"schema": ["Team", "Resource", "FTE Type", "Net Availability (Days)", "Project Billable Days", "Project NB Days", "Internal Time", "Billable Util %", "White Space %", "White Space Days"], "types": ["string", "string", "string", "number", "number", "number", "number", "number", "string", "number"], "rows2D": [["Event management", "Robert Davis", "Part Time", 11.0, 123.5, 0, 0, 11.227, "-1022.73%", -112.5], ["Event management", "Natalie Thompson", "Full Time", 262.0, 80.0, 0, 0, 0.305, "69.47%", 182.0], ["Event management", "Savitha Krishnamurthi", "Part Time", 131.0, 33.0, 0, 0, 0.252, "74.81%", 98.0], ["Event management", "Mykhailo Ivanenko", "Part Time", 131.0, 84.0, 0, 0, 0.641, "35.88%", 47.0], ["Event management", "Laura Lewis", "Full Time", 262.0, 90.0, 0, 0, 0.344, "65.65%", 172.0], ["Event management", "Andrew Allen", "Full Time", 248.0, 69.04, 0, 15.0, 0.278, "66.11%", 163.96], ["Event management", "Samantha Young", "Full Time", 131.0, 127.0, 0, 0, 0.969, "3.05%", 4.0], ["Project Management", "Anna Schmidt", "Part Time", 43.5, 36.0, 2.0, 0, 0.828, "12.64%", 5.5], ["Project Management", "Satish Joshi", "Full Time", 66.0, 48.5, 0, 0, 0.735, "26.52%", 17.5], ["Project Management", "Thomas Wilson", "Full Time", 262.0, 87.0, 0, 0, 0.332, "66.79%", 175.0], ["Project Management", "Christopher Garcia", "Full Time", 0, 78.0, 23.0, 0, 0, null, -101.0], ["Sales", "Olivia Martinez", "Full Time", 0, 2.5, 0, 0, 0, null, -2.5], ["Sales", "Linda Anderson", "Part Time", 131.0, 118.5, 0, 0, 0.905, "9.54%", 12.5], ["Sales", "Kateryna Kravchenko", "Full Time", 262.0, 76.0, 0, 0, 0.29, "70.99%", 186.0], ["Sales", "Andriy Petrov ", "Full Time", 262.0, 6.0, 0, 0, 0.023, "97.71%", 256.0], ["Technology", "Emily Johnson", "Full Time", 262.0, 59.0, 1.0, 0, 0.225, "77.10%", 202.0], ["Technology", "Michael Smith", "Part Time", 76.0, 21.0, 0, 0, 0.276, "72.37%", 55.0], ["Technology", "Sarah Lee", "Full Time", 197.0, 101.0, 0, 0, 0.513, "48.73%", 96.0], ["Technology", "Natalie Hall", "Full Time", 262.0, 65.0, 0, 0, 0.248, "75.19%", 197.0], ["Technology", "Joshua King", "Part Time", 131.0, 34.5, 1.0, 0, 0.263, "72.90%", 95.5]]}}'
           }
-          
+
           const parsed = JSON.parse(changedProps.datasets || '{}') || {}
           // reconstruct rows as array of objects for convenience
           const rebuilt = {}
@@ -232,15 +229,15 @@
             .map(([k, v]) => `${k}: ${v?.rows?.length || 0} rows`)
             .join(' · ')
           // this.$modelChip.textContent = tag || 'AI Assistant'
-          this._updateDatasetsUI();
+          this._updateDatasetsUI()
         } catch {
           this._datasets = {}
           // this.$modelChip.textContent = 'AI Assistant'
-          this._updateDatasetsUI();
+          this._updateDatasetsUI()
         }
       } else if (!this.$modelChip.textContent) {
         // this.$modelChip.textContent = 'AI Assistant'
-        this._updateDatasetsUI();
+        this._updateDatasetsUI()
       }
 
       // If first render and datasets exist, nudge the user
@@ -272,7 +269,6 @@
         payload = params.payload || ''
       }
 
-      
       if (payload) this._applyDatasets(payload)
     }
 
@@ -356,35 +352,38 @@
       return out.join('')
     }
 
-      _mdTable(block) {
-    // Normalize: trim, then remove leading/trailing pipes on each line
-    const raw = block.trim().split('\n').filter(Boolean);
-    if (raw.length < 2) return null;
+    _mdTable (block) {
+      // Normalize: trim, then remove leading/trailing pipes on each line
+      const raw = block.trim().split('\n').filter(Boolean)
+      if (raw.length < 2) return null
 
-    const norm = raw.map(line =>
-      line.replace(/^\s*\|\s*/, '').replace(/\s*\|\s*$/, '')
-    );
+      const norm = raw.map(line =>
+        line.replace(/^\s*\|\s*/, '').replace(/\s*\|\s*$/, '')
+      )
 
-    // Separator row must be --- (optionally with :) in each cell
-    const sepCells = norm[1].split('|').map(s => s.trim());
-    const sepOk = sepCells.length > 0 && sepCells.every(c => /^:?-{3,}:?$/.test(c));
-    if (!sepOk) return null;
+      // Separator row must be --- (optionally with :) in each cell
+      const sepCells = norm[1].split('|').map(s => s.trim())
+      const sepOk =
+        sepCells.length > 0 && sepCells.every(c => /^:?-{3,}:?$/.test(c))
+      if (!sepOk) return null
 
-    const toCells = (line) =>
-      line.split('|')
-        .map(c => c.trim())
-        .filter(c => c.length > 0)             // drop empties from edge pipes
-        .map(c => this._mdInline(c));
+      const toCells = line =>
+        line
+          .split('|')
+          .map(c => c.trim())
+          .filter(c => c.length > 0) // drop empties from edge pipes
+          .map(c => this._mdInline(c))
 
-    const head = toCells(norm[0]);
-    const bodyRows = norm.slice(2).map(toCells);
+      const head = toCells(norm[0])
+      const bodyRows = norm.slice(2).map(toCells)
 
-    const ths = head.map(h => `<th>${h}</th>`).join('');
-    const trs = bodyRows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+      const ths = head.map(h => `<th>${h}</th>`).join('')
+      const trs = bodyRows
+        .map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`)
+        .join('')
 
-    return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
-  }
-
+      return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`
+    }
 
     _mdInline (s) {
       // Escape, then apply inline markdown
@@ -407,26 +406,35 @@
       return html
     }
 
-      _updateDatasetsUI() {
-    const chip = this.$modelChip;
-    const drawer = this._shadowRoot.getElementById('dsDrawer');
-    const entries = Object.entries(this._datasets || {});
-    if (!entries.length) { chip.textContent = 'AI Assistant'; drawer.style.display = 'none'; return; }
+    _updateDatasetsUI () {
+      const chip = this.$modelChip
+      const drawer = this._shadowRoot.getElementById('dsDrawer')
+      const entries = Object.entries(this._datasets || {})
+      if (!entries.length) {
+        chip.textContent = 'AI Assistant'
+        drawer.style.display = 'none'
+        return
+      }
 
-    // Chip text
-    const parts = entries.map(([k,v]) => `${k}: ${v.rows?.length || 0} rows`);
-    chip.textContent = parts.length > 2
-      ? `${parts.slice(0,2).join(' · ')} · +${parts.length-2} more`
-      : parts.join(' · ');
+      // Chip text
+      const parts = entries.map(([k, v]) => `${k}: ${v.rows?.length || 0} rows`)
+      chip.textContent =
+        parts.length > 2
+          ? `${parts.slice(0, 2).join(' · ')} · +${parts.length - 2} more`
+          : parts.join(' · ')
 
-    // Drawer content
-    const html = entries.map(([name, ds]) => {
-      const cols = (ds.schema || []).slice(0, 12).join(', ');
-      return `<div class="ds"><div class="name">${name}</div><div>${ds.rows?.length || 0} rows</div><div>${cols}</div></div>`;
-    }).join('') || '<div class="ds">No datasets</div>';
-    drawer.innerHTML = html;
-  }
-
+      // Drawer content
+      const html =
+        entries
+          .map(([name, ds]) => {
+            const cols = (ds.schema || []).slice(0, 12).join(', ')
+            return `<div class="ds"><div class="name">${name}</div><div>${
+              ds.rows?.length || 0
+            } rows</div><div>${cols}</div></div>`
+          })
+          .join('') || '<div class="ds">No datasets</div>'
+      drawer.innerHTML = html
+    }
 
     _append (role, text) {
       const b = document.createElement('div')
@@ -502,13 +510,65 @@
         }
       }
 
+      // Guidelines:
+      // - Prefer calculations and conclusions implied by the dataset preview and schema.
+      // - If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
+      // - Be precise with column names; do not invent fields that aren’t in the schema.
+
       // a tiny instruction so the model behaves
       lines.push(
         `
-      Guidelines:
-      - Prefer calculations and conclusions implied by the dataset preview and schema.
-      - If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
-      - Be precise with column names; do not invent fields that aren’t in the schema.`.trim()
+      KEYS & JOINS
+      - Use “Team” as the common key between TEAM_UTILIZATION and RESOURCE_UTILIZATION.
+
+      SCOPE
+      - Focus ONLY on utilization/capacity (no revenue).
+      - Treat as a snapshot (no time dimension unless present) and state that assumption.
+
+      DEFAULTS
+      - Underutilized threshold: 60% Billable Util %.
+      - Top/Bottom list size: 5 if not specified.
+      - Tables: show up to 10 rows by default; disclose the limit and offer to expand.
+
+      CALCULATION RULES
+      1) Billable Util % (resource):
+        a) If "Billable Util %" exists, use it.
+        b) Else compute: (Project Billable Days / Net Availability (Days)) × 100.
+        c) If Net Availability is missing, approximate Availability = Billable + NB + Internal, then compute.
+        d) If denominator ≤ 0 or missing, exclude and call it out.
+
+      2) Billable Util % (team):
+        - Weighted aggregation from resources:
+          Team Util % = (Σ Project Billable Days) / (Σ Net Availability (Days)) × 100.
+        - If only TEAM_UTILIZATION is available, use its Billable Util % or recompute from its days when possible.
+
+      3) White Space %:
+        a) If present, use it.
+        b) Else compute: (White Space Days / Net Availability (Days)) × 100.
+
+      4) Groupings & drill:
+        - “By team” uses TEAM_UTILIZATION or aggregates RESOURCE_UTILIZATION by Team.
+        - “By resource” uses RESOURCE_UTILIZATION and include FTE Type when helpful.
+
+      5) Data quality:
+        - Identify and exclude rows with zero/negative availability or missing data from ratios; mention exclusions.
+
+      OUTPUT STYLE
+      - Start with a short executive summary (1–4 bullets) with a clear “so what”.
+      - Then (if helpful) show a compact table (≤10 rows) with: Team, Resource (if applicable), Billable Util %, White Space %, White Space Days, Net Availability (Days).
+      - Always list the filters, thresholds, and assumptions you applied.
+
+      AMBIGUITY HANDLING
+      - If asked for trends without time fields, say the dataset is a snapshot and invite a time-based dataset.
+      - If asked for “bench”/“underutilized,” use the 60% default unless specified.
+      - For “top utilized/bottom utilized,” sort by Billable Util % (desc/asc respectively).
+
+      NOW RESPONDING
+      - Detect required dataset(s) and columns.
+      - Join/aggregate on Team as needed.
+      - Apply filters, compute metrics per rules, sort/limit.
+      - Return: (A) executive bullets, (B) optional small table, (C) assumptions/filters used.
+      `.trim()
       )
 
       return lines.join('\n')
@@ -550,8 +610,6 @@
         return
       }
 
-      
-
       // show typing indicator + lock UI
       this._startTyping()
       this.$send.disabled = true
@@ -569,11 +627,12 @@
           '',
           dsContext,
           '',
-          'When responding, prefer Markdown with **bold** labels, bullet points, and small tables for comparisons. Keep it concise and executive-friendly.'
-        ].join('\n');
+          
+        ].join('\n')
 
+        // 'When responding, prefer Markdown with **bold** labels, bullet points, and small tables for comparisons. Keep it concise and executive-friendly.'
 
-        console.log(system);
+        console.log(system)
 
         // return;
 
