@@ -510,64 +510,15 @@
         }
       }
 
-      // Guidelines:
-      // - Prefer calculations and conclusions implied by the dataset preview and schema.
-      // - If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
-      // - Be precise with column names; do not invent fields that aren’t in the schema.
+      
 
       // a tiny instruction so the model behaves
       lines.push(
         `
-      KEYS & JOINS
-      - Use “Team” as the common key between TEAM_UTILIZATION and RESOURCE_UTILIZATION.
-
-      SCOPE
-      - Focus ONLY on utilization/capacity (no revenue).
-      - Treat as a snapshot (no time dimension unless present) and state that assumption.
-
-      DEFAULTS
-      - Underutilized threshold: 60% Billable Util %.
-      - Top/Bottom list size: 5 if not specified.
-      - Tables: show up to 10 rows by default; disclose the limit and offer to expand.
-
-      CALCULATION RULES
-      1) Billable Util % (resource):
-        a) If "Billable Util %" exists, use it.
-        b) Else compute: (Project Billable Days / Net Availability (Days)) × 100.
-        c) If Net Availability is missing, approximate Availability = Billable + NB + Internal, then compute.
-        d) If denominator ≤ 0 or missing, exclude and call it out.
-
-      2) Billable Util % (team):
-        - Weighted aggregation from resources:
-          Team Util % = (Σ Project Billable Days) / (Σ Net Availability (Days)) × 100.
-        - If only TEAM_UTILIZATION is available, use its Billable Util % or recompute from its days when possible.
-
-      3) White Space %:
-        a) If present, use it.
-        b) Else compute: (White Space Days / Net Availability (Days)) × 100.
-
-      4) Groupings & drill:
-        - “By team” uses TEAM_UTILIZATION or aggregates RESOURCE_UTILIZATION by Team.
-        - “By resource” uses RESOURCE_UTILIZATION and include FTE Type when helpful.
-
-      5) Data quality:
-        - Identify and exclude rows with zero/negative availability or missing data from ratios; mention exclusions.
-
-      OUTPUT STYLE
-      - Start with a short executive summary (1–4 bullets) with a clear “so what”.
-      - Then (if helpful) show a compact table (≤10 rows) with: Team, Resource (if applicable), Billable Util %, White Space %, White Space Days, Net Availability (Days).
-      - Always list the filters, thresholds, and assumptions you applied.
-
-      AMBIGUITY HANDLING
-      - If asked for trends without time fields, say the dataset is a snapshot and invite a time-based dataset.
-      - If asked for “bench”/“underutilized,” use the 60% default unless specified.
-      - For “top utilized/bottom utilized,” sort by Billable Util % (desc/asc respectively).
-
-      NOW RESPONDING
-      - Detect required dataset(s) and columns.
-      - Join/aggregate on Team as needed.
-      - Apply filters, compute metrics per rules, sort/limit.
-      - Return: (A) executive bullets, (B) optional small table, (C) assumptions/filters used.
+        Guidelines:
+       - Prefer calculations and conclusions implied by the dataset preview and schema.
+       - If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
+       - Be precise with column names; do not invent fields that aren’t in the schema.
       `.trim()
       )
 
@@ -627,11 +578,11 @@
           '',
           dsContext,
           '',
+          'When responding, prefer Markdown with **bold** labels, bullet points, and small tables for comparisons. Keep it concise and executive-friendly.'
           
         ].join('\n')
 
-        // 'When responding, prefer Markdown with **bold** labels, bullet points, and small tables for comparisons. Keep it concise and executive-friendly.'
-
+        
         console.log(system)
 
         // return;
