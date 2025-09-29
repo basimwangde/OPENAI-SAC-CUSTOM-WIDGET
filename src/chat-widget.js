@@ -520,38 +520,11 @@
       // a tiny instruction so the model behaves
       lines.push(
         `
-        Use only the dataset IKF Finance - Model (MIS) with columns:
-        Date ("Mon YYYY"), IKF_Branch, IKF_Product, Account, Version, Amount.
-        Core Rules
-          1. Default: Version="Actual".
-          2. Use Amount as-is (negatives valid).
-          3. Net = Σ(Revenue) + Σ(Opex) + Σ(Interest Expense).
-          4. Dates: Jan–Dec order; only months present are valid.
-          5. If a filter value isn’t found → reply: “Not in current data. Available: …”.
-          6. Output format:
-            ○ First line = direct answer/summary.
-            ○ Then: Filters: … | Method: … | Caveats: (≤3 lines).
-
-
-        Optional Extensions
-          • Time calcs: YTD, QTD, MTD, MoM %.
-          • Aggregations: SUM, AVG, MIN, MAX by Date/Branch/Product/Account.
-          • Ratios: Opex/Revenue %, Interest/Revenue %.
-          • Trends: rolling 3m avg, CAGR, growth.
-          • Breakdowns: top/bottom branches or products.
-          • Output as JSON {answer, filters, method, caveats} if requested.
-          • Executive summary / high-level summary / overview / snapshot → return 4–5 bullets:
-            ○ Totals (Revenue, Opex, Interest, Net)
-            ○ Top branch by Revenue
-            ○ Top product by Revenue
-            ○ Caveats (data range, negatives valid).
-
-        Safety Nets
-          • Never invent fields or KPIs outside schema.
-          • If period not in data → reply: “Data available only till [last month present].”
-          • Flag anomalies (e.g., negative Revenue) in Caveats.
-        Keep answers concise and structured.
-
+        Guidelines:
+       - Do the calculations only if the required answer is not directly available in the dataset.
+       - Prefer conclusions implied by the dataset preview and schema.
+       - Be precise with column names; do not invent fields that aren’t in the schema.
+       - Always list the filters, thresholds, and assumptions you applied.
       `.trim()
       )
 
@@ -607,12 +580,82 @@
 
         const system = [
           this._props.systemPrompt ||
-            'You are PerciBOT, a helpful and concise assistant for SAP Analytics Cloud.',
-          '',
-          dsContext,
-          '',
-          'When responding, Keep it concise and executive-friendly.'
+          //   'You are PerciBOT, a helpful and concise assistant for SAP Analytics Cloud.',
+          // '',
+          // dsContext,
+          // '',
+          // 'When responding, Keep it concise and executive-friendly.'
           
+
+
+          `
+You are **PerciBOT**, a conversational AI for analytics.
+
+Your role is to answer user queries about financial performance across Companies, Branches, Products, and Accounts (Revenue, Opex, Interest Expense).
+All figures are in INR, aggregated for Jan–Apr 2025.
+
+Use this dataset summary as your ground truth. Provide clear, business-analyst style answers with tables or breakdowns when useful.
+
+Companies:
+- IKF Finance Ltd → Revenue: 4,178,132.07, Opex: 3,183,336.85, Interest Expense: 5,010,185.45
+- IKF House Finance Ltd → Revenue: 4,178,132.07, Opex: 3,183,336.85, Interest Expense: 5,010,185.45
+
+Branches:
+- Amar Chambers → Revenue: 1,441,039.88, Opex: 878,538.58, Interest Expense: 1,343,608.88
+- Apra Tower → Revenue: 1,080,626.42, Opex: 898,949.30, Interest Expense: 1,076,335.00
+- Borivali → Revenue: 988,853.88, Opex: 936,281.90, Interest Expense: 1,379,355.52
+- Broadway Business Centre → Revenue: 1,194,118.34, Opex: 1,155,437.00, Interest Expense: 1,376,638.86
+- Dosti Pinacle → Revenue: 945,528.48, Opex: 998,130.38, Interest Expense: 1,888,149.90
+- Part II Gurugram → Revenue: 883,096.80, Opex: 809,298.44, Interest Expense: 1,324,802.60
+- Pusa Road → Revenue: 1,823,000.34, Opex: 690,038.10, Interest Expense: 1,631,480.14
+
+Products:
+- Cars & MUV Loans → Revenue: 1,731,314.20, Opex: 3,940,045.52, Interest Expense: 5,856,240.84
+- Commercial Vehicle Loans → Revenue: 2,060,208.94, Opex: -3,216,340.58, Interest Expense: -4,835,485.26
+- Construction Equipment Loans → Revenue: 2,764,835.70, Opex: 9,039,834.06, Interest Expense: 13,885,900.40
+- Home Loans → Revenue: 947,721.66, Opex: -2,036,823.34, Interest Expense: -2,992,687.48
+- MSME Loans → Revenue: 852,183.64, Opex: -1,360,041.96, Interest Expense: -1,893,597.60
+
+Branch × Product:
+- Amar Chambers × Cars & MUV Loans → Revenue: 24,150.46, Opex: 645,579.34, Interest Expense: 920,755.74
+- Amar Chambers × Commercial Vehicle Loans → Revenue: 468,571.72, Opex: -472,048.02, Interest Expense: -761,812.40
+- Amar Chambers × Construction Equipment Loans → Revenue: 637,315.18, Opex: 1,173,960.84, Interest Expense: 1,980,768.68
+- Amar Chambers × Home Loans → Revenue: 251,661.72, Opex: -297,792.86, Interest Expense: -525,119.46
+- Amar Chambers × MSME Loans → Revenue: 59,340.80, Opex: -171,160.72, Interest Expense: -270,983.68
+- Apra Tower × Cars & MUV Loans → Revenue: 79,456.72, Opex: 594,146.06, Interest Expense: 758,427.04
+- Apra Tower × Commercial Vehicle Loans → Revenue: 506,309.20, Opex: -554,853.16, Interest Expense: -692,147.38
+- Apra Tower × Construction Equipment Loans → Revenue: 197,115.92, Opex: 1,349,913.32, Interest Expense: 1,742,450.08
+- Apra Tower × Home Loans → Revenue: 158,539.00, Opex: -300,252.44, Interest Expense: -441,784.08
+- Apra Tower × MSME Loans → Revenue: 139,205.58, Opex: -190,004.48, Interest Expense: -290,610.66
+- Borivali × Cars & MUV Loans → Revenue: 498,004.64, Opex: 502,471.44, Interest Expense: 822,200.18
+- Borivali × Commercial Vehicle Loans → Revenue: 170,514.82, Opex: -391,055.20, Interest Expense: -689,009.04
+- Borivali × Construction Equipment Loans → Revenue: 34,511.84, Opex: 1,372,489.84, Interest Expense: 1,850,767.64
+- Borivali × Home Loans → Revenue: 104,230.22, Opex: -318,845.86, Interest Expense: -343,216.30
+- Borivali × MSME Loans → Revenue: 181,592.36, Opex: -228,778.32, Interest Expense: -261,386.96
+- Broadway Business Centre × Cars & MUV Loans → Revenue: 46,930.10, Opex: 638,044.48, Interest Expense: 813,013.58
+- Broadway Business Centre × Commercial Vehicle Loans → Revenue: 296,488.44, Opex: -517,156.12, Interest Expense: -673,445.38
+- Broadway Business Centre × Construction Equipment Loans → Revenue: 720,956.08, Opex: 1,451,712.70, Interest Expense: 1,933,980.36
+- Broadway Business Centre × Home Loans → Revenue: 49,306.12, Opex: -274,182.12, Interest Expense: -399,004.50
+- Broadway Business Centre × MSME Loans → Revenue: 80,437.60, Opex: -142,981.94, Interest Expense: -297,905.20
+- Dosti Pinacle × Cars & MUV Loans → Revenue: 212,562.38, Opex: 548,269.22, Interest Expense: 900,908.86
+- Dosti Pinacle × Commercial Vehicle Loans → Revenue: 199,143.64, Opex: -420,283.32, Interest Expense: -629,481.18
+- Dosti Pinacle × Construction Equipment Loans → Revenue: 128,304.20, Opex: 1,370,412.80, Interest Expense: 2,290,529.20
+- Dosti Pinacle × Home Loans → Revenue: 200,492.42, Opex: -294,332.92, Interest Expense: -409,800.78
+- Dosti Pinacle × MSME Loans → Revenue: 205,025.84, Opex: -205,935.40, Interest Expense: -264,006.20
+- Part II Gurugram × Cars & MUV Loans → Revenue: 393,176.60, Opex: 519,246.88, Interest Expense: 861,983.62
+- Part II Gurugram × Commercial Vehicle Loans → Revenue: 346,465.50, Opex: -485,738.84, Interest Expense: -730,764.00
+- Part II Gurugram × Construction Equipment Loans → Revenue: -112,718.64, Opex: 1,285,467.42, Interest Expense: 1,924,433.42
+- Part II Gurugram × Home Loans → Revenue: 105,595.58, Opex: -270,528.28, Interest Expense: -468,056.24
+- Part II Gurugram × MSME Loans → Revenue: 150,577.76, Opex: -239,148.74, Interest Expense: -262,794.20
+- Pusa Road × Cars & MUV Loans → Revenue: 477,033.30, Opex: 492,288.10, Interest Expense: 778,951.82
+- Pusa Road × Commercial Vehicle Loans → Revenue: 72,715.62, Opex: -375,205.92, Interest Expense: -658,825.88
+- Pusa Road × Construction Equipment Loans → Revenue: 1,159,351.12, Opex: 1,035,877.14, Interest Expense: 2,162,971.02
+- Pusa Road × Home Loans → Revenue: 77,896.60, Opex: -280,888.86, Interest Expense: -405,706.12
+- Pusa Road × MSME Loans → Revenue: 36,003.70, Opex: -182,032.36, Interest Expense: -245,910.70
+
+When responding, Keep it concise and executive-friendly.
+`
+
         ].join('\n')
 
         
