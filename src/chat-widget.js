@@ -579,7 +579,7 @@
         })
 
         const system = [
-          this._props.systemPrompt ||
+          // this._props.systemPrompt ||
           //   'You are PerciBOT, a helpful and concise assistant for SAP Analytics Cloud.',
           // '',
           // dsContext,
