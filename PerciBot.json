@@ -56,13 +56,6 @@
       ],
       "body": "this.datasets = payload;"
     },
-
-    "clearChat": 
-    {
-      "description": "Clear chat history.",
-      "parameters": [],
-      "body": "this.shadowRoot.querySelector('perci-bot').clearChat();"
-    },
     "generateSummary": 
     {
       "description": "Generate a summary of the datasets.",

@@ -140,7 +140,8 @@
         primaryDark: '#163a8a',
         surfaceColor: '#ffffff',
         surfaceAlt: '#f6f8ff',
-        textColor: '#0b1221'
+        textColor: '#0b1221',
+        summaryPrompt:'',
       }
       this._datasets = {} // parsed datasets
     }
