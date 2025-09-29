@@ -522,7 +522,6 @@
         Guidelines:
        - Do the calculations only if the required answer is not directly available in the dataset.
        - Prefer conclusions implied by the dataset preview and schema.
-       - If the exact answer requires full data (beyond preview), say what aggregation/filter is needed and ask me to run it.
        - Be precise with column names; do not invent fields that aren’t in the schema.
        - Always list the filters, thresholds, and assumptions you applied.
       `.trim()
