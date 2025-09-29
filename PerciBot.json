@@ -65,8 +65,14 @@
         "type":"string",
         "description": "Prompt to guide the summary generation."
         }
-      ],
-      "returnType": "string"
+      ]
+    },
+
+    "getLastSummary": {
+      "description": "Return the last generated summary string.",
+      "parameters": [],
+      "returnType": "string",
+      "body": "return (this.summaryResponse || '');"
     }
 
    },
