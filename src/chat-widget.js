@@ -291,9 +291,14 @@
         payload = params.payload || 'Generate a executive summary of the data in 3-4 sentences.'
       }
 
-      this.summaryResponse = this._generateSummary(payload);
-      return this.summaryResponse;
+       this._generateSummary(payload);
+      return;
     }
+
+    if (methodName === 'getLastSummary') {
+    // must synchronously return a string
+    return this.summaryResponse || '';
+  }
   }
 
      async _generateSummary(prompt){
@@ -432,7 +437,7 @@ When responding, Keep it concise and executive-friendly.
 
         const data = await res.json()
         const ans = data.choices?.[0]?.message?.content || '(No content)'
-
+        this.summaryResponse = ans;
         return ans;
       }catch (e) {
         this._stopTyping()

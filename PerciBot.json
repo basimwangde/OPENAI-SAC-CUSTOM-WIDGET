@@ -66,8 +66,7 @@
         "description": "Prompt to guide the summary generation."
         }
       ],
-      "returnType": "string",
-      "body": "return this.summaryResponse;"
+      "returnType": "string"
     }
 
    },
