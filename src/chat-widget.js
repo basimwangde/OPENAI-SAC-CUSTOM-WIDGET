@@ -106,7 +106,7 @@
 
       <div class="footer">
         <div class="muted" id="hint"></div>
-        <div class="muted"><a href="https://www.linkedin.com/in/basim-wangde/" target="_blank" >Basim Wangde</a></div>
+        <div class="muted"><a href="https://www.linkedin.com/company/percipere/" target="_blank" >Percipere Consulting</a></div>
       </div>
     </div>
   `
