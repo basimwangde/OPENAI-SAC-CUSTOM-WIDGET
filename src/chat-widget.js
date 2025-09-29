@@ -143,6 +143,7 @@
         textColor: '#0b1221',
         summaryPrompt:'',
       }
+      this.summaryResponse = 'Test';
       this._datasets = {} // parsed datasets
     }
 
@@ -289,9 +290,11 @@
         // some runtimes send a map
         payload = params.payload || 'Generate a executive summary of the data in 3-4 sentences.'
       }
-        return this._generateSummary(payload);
-      }
+
+      this.summaryResponse = this._generateSummary(payload);
+      return this.summaryResponse;
     }
+  }
 
      async _generateSummary(prompt){
       

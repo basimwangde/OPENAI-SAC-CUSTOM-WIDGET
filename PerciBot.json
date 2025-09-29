@@ -67,7 +67,7 @@
         }
       ],
       "returnType": "string",
-      "body": "this.summaryPrompt = payload;"
+      "body": "return this.summaryResponse;"
     }
 
    },
