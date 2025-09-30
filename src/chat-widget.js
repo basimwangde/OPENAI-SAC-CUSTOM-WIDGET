@@ -201,9 +201,9 @@
 
       console.log('datasets', changedProps)
 
-      if(!changedProps.summaryPrompt) {
+      if(changedProps.summaryPrompt !== undefined) {
         this._generateSummary(changedProps.summaryPrompt);
-      return;
+        return;
       }
       // Show API key hint
       this.$hint.textContent = this._props.apiKey
