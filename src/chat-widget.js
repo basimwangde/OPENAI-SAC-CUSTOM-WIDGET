@@ -202,7 +202,7 @@
       console.log('datasets', changedProps)
 
       if(!changedProps.summaryPrompt) {
-        this._generateSummary(payload);
+        this._generateSummary(changedProps.summaryPrompt);
       return;
       }
       // Show API key hint
