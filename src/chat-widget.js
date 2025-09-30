@@ -269,13 +269,13 @@
   getLastSummary() {
     // add a console marker so you can confirm it gets called
     console.log("[PerciBOT] getLastSummary invoked");
-    console.debug("[PerciBOT] getLastSummary invoked, waiting 10s...");
+    // console.debug("[PerciBOT] getLastSummary invoked, waiting 10s...");
 
-    // Block for 10 seconds
-    const start = Date.now();
-    while (Date.now() - start < 10000) {
-      // spin-wait (not elegant, but SAC expects sync return)
-    }
+    // // Block for 10 seconds
+    // const start = Date.now();
+    // while (Date.now() - start < 10000) {
+    //   // spin-wait (not elegant, but SAC expects sync return)
+    // }
     return this.summaryResponse ? String(this.summaryResponse) : "";
   }
 
