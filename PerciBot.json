@@ -40,7 +40,9 @@
     "surfaceColor": { "type": "string",  "default": "#ffffff" },
     "surfaceAlt":   { "type": "string",  "default": "#f6f8ff" },
     "textColor":    { "type": "string",  "default": "#0b1221" },
-    "datasets": { "type": "string", "default": "" }
+    "datasets": { "type": "string", "default": "" },
+    "summaryResponse": { "type": "string", "default": "" },
+    "summaryPrompt": { "type": "string", "default": "" }
   },
 
   "methods": {
@@ -65,7 +67,8 @@
         "type":"string",
         "description": "Prompt to guide the summary generation."
         }
-      ]
+      ],
+      "body": "this.summaryPrompt = payload;"
     },
 
     "getLastSummary": {

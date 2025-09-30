@@ -200,6 +200,11 @@
       this._applyTheme()
 
       console.log('datasets', changedProps)
+
+      if(!changedProps.summaryPrompt) {
+        this._generateSummary(payload);
+      return;
+      }
       // Show API key hint
       this.$hint.textContent = this._props.apiKey
         ? 'AI can make mistakes. Please verify results.'
