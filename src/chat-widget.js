@@ -269,9 +269,13 @@
   getLastSummary() {
     // add a console marker so you can confirm it gets called
     console.log("[PerciBOT] getLastSummary invoked");
-    setTimeout(() => {
-      console.log("[PerciBOT] getLastSummary timeout");
-    }, 5000);
+    console.debug("[PerciBOT] getLastSummary invoked, waiting 5s...");
+
+    // Block for 5 seconds
+    const start = Date.now();
+    while (Date.now() - start < 5000) {
+      // spin-wait (not elegant, but SAC expects sync return)
+    }
     return this.summaryResponse ? String(this.summaryResponse) : "";
   }
 
