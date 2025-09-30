@@ -74,10 +74,8 @@
     "getLastSummary": {
       "description": "Return the last generated summary string.",
       "parameters": [],
-      "returnType": "string",
-      "body": "return (this.summaryResponse || '');"
+      "returnType": "string"
     }
-
    },
   "events":  { }
 }

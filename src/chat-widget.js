@@ -265,6 +265,16 @@
       }
     }
 
+    // Direct method SAC will call when JSON has no `body`
+  getLastSummary() {
+    // add a console marker so you can confirm it gets called
+    console.log("[PerciBOT] getLastSummary invoked");
+    setTimeout(() => {
+      console.log("[PerciBOT] getLastSummary timeout");
+    }, 5000);
+    return this.summaryResponse ? String(this.summaryResponse) : "";
+  }
+
     // SAC will call this for custom methods defined in JSON
     onCustomWidgetRequest (methodName, params) {
       console.log('onCustomWidgetRequest', params)
