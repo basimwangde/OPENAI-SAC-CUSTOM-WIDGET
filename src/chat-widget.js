@@ -771,10 +771,10 @@ When responding, Keep it concise and executive-friendly.
           maxCharsTotal: 8000
         })
 
-        const system = '';
+        this.system = '';
        if(this._props.systemPrompt == 'SmartStream'){
 
-           system = [
+           this.system = [
             `You are PerciBOT, a financial Q&A assistant for SmartStream’s FY2026 Budget data (values in ₹).
 Use this table directly to answer financial questions.
 
@@ -826,7 +826,7 @@ Example Prompts:
         else{
 
 
-         system = [
+         this.system = [
           // this._props.systemPrompt ||
           //   'You are PerciBOT, a helpful and concise assistant for SAP Analytics Cloud.',
           // '',
@@ -909,14 +909,14 @@ When responding, Keep it concise and executive-friendly.
       }
 
         
-        console.log(system)
+        console.log(this.system)
 
         // return;
 
         const body = {
           model: this._props.model || 'gpt-3.5-turbo',
           messages: [
-            { role: 'system', content: system },
+            { role: 'system', content: this.system },
             { role: 'user', content: q }
           ],
           temperature: 0.2
