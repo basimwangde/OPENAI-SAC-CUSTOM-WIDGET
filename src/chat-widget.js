@@ -815,6 +815,18 @@ Dataset – SmartStream Group FY2026 Budget (₹)
 | Taxes | -285,598.40 | -312,373.25 | -106,029.30 | -202,192.50 | -906,193.45 |
 | Net Profit | 600,472.49 | 348,156.45 | 2,653,946.99 | -4,364.01 | 3,598,211.92 |
 
+
+FINANCIAL HIERARCHY:
+
+1. Revenue Components
+   -  Revenue:PS Revenue, License Revenue, Transfer Price Revenue
+
+2. Direct Costs Components
+   -  Direct Costs: License & Infra Cost, TP Cross Charge
+
+3. Indirect Costs Components
+   -  Indirect Costs: Indirect Employee Cost, Marketing & Sales, Office Supplies, Utilities, Rent, Administrative Exp, Electricity, Legal Fees, Accounting Fees, R&D Costs
+
 Example Prompts:
 - Summarize SmartStream’s FY2026 budget performance.
 - Which entity has the highest operating loss?
@@ -822,6 +834,7 @@ Example Prompts:
 - What percentage of total revenue comes from C004?
 - If revenue increases by 10%, estimate new total PBT.
 - Show all indirect costs by entity.
+- Give me breakdown of indirect costs for C003.
 `
           ].join('\n');
         }
