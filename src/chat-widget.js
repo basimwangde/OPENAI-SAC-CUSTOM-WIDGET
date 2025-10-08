@@ -834,6 +834,8 @@ Example Prompts:
 - What percentage of total revenue comes from C004?
 - If revenue increases by 10%, estimate new total PBT.
 - Show all indirect costs by entity.
+- Give me breakdown of indirect costs
+- Which component contribute the highest to the indirect costs
 - Give me breakdown of indirect costs for C003.
 `
           ].join('\n');
