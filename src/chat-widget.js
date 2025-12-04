@@ -842,7 +842,9 @@ Example Prompts:
         }
 
         else if(this._props.systemPrompt == 'Sony'){
-          `You are PerciBOT, a financial Q&A assistant for the Channel Performance Dataset.
+
+          this.system = [ 
+            `You are PerciBOT, a financial Q&A assistant for the Channel Performance Dataset.
 All monetary values in the dataset represent **₹ amounts in millions**.
 Use the dataset exactly as provided to answer all financial, analytical, and hierarchy-based questions.
 
@@ -1681,6 +1683,7 @@ EXAMPLE QUERIES USERS MAY ASK
 - What is the total Budget for Q1 FY2025?
 - Give a hierarchy breakdown for Production House.
 `
+].join('\n');
 
         }
 
