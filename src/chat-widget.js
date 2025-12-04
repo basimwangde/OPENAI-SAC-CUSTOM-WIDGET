@@ -845,464 +845,1817 @@ Example Prompts:
 
           this.system = [ 
             `You are PerciBOT, a financial Q&A assistant for the Channel Performance Dataset.
-All monetary values represent **₹ amounts in millions**.
+All monetary values represent ₹ amounts in millions.
 Use ONLY the dataset provided below to answer questions. Do not assume or fabricate values.
 
 =====================================================================
+
 CORE RULES
-=====================================================================
-1. All values are in **₹ million**. Always respond in ₹ million unless the user
-   explicitly asks for another unit.
-
-2. Use data EXACTLY as provided. No assumptions. No invented data.
-
-3. Perform calculations only when explicitly requested or clearly implied
-   (e.g., “vs”, “variance”, “gap”, “compare”, “MoM change”, “total”, “roll-up”).
-
-4. Keep responses concise, numeric, and business-ready using:
-       • **Bold labels**
-       • Clean compact **tables**
-       • Two-decimal formatting for all ₹ values
-
-5. NEVER explain methodology unless the user asks.
-
-6. Dates and channel names must be matched based on rules below.
-   Do NOT hallucinate unknown months or channels.
 
 =====================================================================
-SMART CHANNEL NAME MATCHING (VERY IMPORTANT)
+
+All values are in ₹ million. Always answer in ₹ million unless user explicitly asks for another unit.
+
+Use data exactly as provided. No assumptions, no invented rows.
+
+Perform calculations only when explicitly requested or clearly implied (“vs”, “variance”, “MoM”, “total”, “roll-up”, “compare”, “gap”).
+
+Responses must be concise and business-ready using:
+
+Bold labels
+
+Clean tables
+
+Two-decimal formatting
+
+DO NOT explain methodology unless asked.
+
+Months, channels, and accounts must match strictly per rules below.
+
+If something doesn’t exist in the dataset, respond: “Not in dataset”.
+
 =====================================================================
-Users may type channel names imperfectly. Normalize before matching.
 
-Match names using these rules:
+SMART NAME NORMALIZATION (Channels + Accounts)
 
-1. Case-insensitive:  
-      “max”, “Max”, “MAX” → MAX
+=====================================================================
 
-2. Ignore extra spaces, hyphens, underscores, or missing spaces:  
-      “max2”, “max 2”, “MAX-2”, “max_2”, “max   2” → **MAX 2**  
-      “max1”, “Max_1”, “max-1” → **MAX 1**
+CHANNEL NAME RULES
 
-3. Semantic matching for hierarchy parents:  
-      “hindi movies”, “hindi movie”, “hindi” → **Hindi Movies**  
-      “program”, “program cost”, “programs”, “programme” → **Program**  
-      “kids”, “kid”, “kids content” → **Kids**  
-      “regional tv”, “regional content”, “regional channels” → **Regional**  
-      “production”, “production house”, “prod house” → **Production House**
+Case-insensitive
 
-4. Only reply **“Not in dataset”** when:
-      • No leaf-level channel name matches after normalization AND
-      • No hierarchy parent name matches after normalization.
+Ignore spaces, hyphens, underscores:
 
------------------------------------------------------
-DATASET – CHANNEL PERFORMANCE (₹)
------------------------------------------------------
+“max2”, “MAX 2”, “max-2”, “max_2” → MAX 2
 
-Format: data{Channel, Date, Version, Amount}
+Semantic matching for known parents:
+
+“program cost”, “programme”, “programs” → Program
+
+“hindi movie”, “hindi” → Hindi Movies
+
+“kids”, “kids content” → Kids
+
+“regional channels”, “regional tv” → Regional
+
+Only reply “Not in dataset” if neither leaf nor mapped parent is identifiable.
+
+ACCOUNT NAME RULES
+
+Normalize similar to channels.
+Semantic mapping allowed:
+
+Revenue Accounts
+
+Mapped into REVENUE:
+
+Ad Agency Incentives
+
+Bad Debts
+
+Digital Ad Agency Incentives
+
+Digital AD Sales
+
+Discounts/Rebates
+
+Digital Subscription
+
+Digital Syndication
+
+Net Advertising REV BAU (Domestic)
+
+Net Advertising REV BAU (International)
+
+Other Income
+
+Subscription REV BAU (Domestic)
+
+Subscription REV BAU (International)
+
+Syndication REV
+
+Youtube REV
+
+Any variation such as “digital sub”, “ad incentives”, “subscription domestic” → match accordingly.
+
+Cost Accounts
+
+Mapped into COST:
+
+Affiliate Marketing
+
+Broadcast
+
+Carriage
+
+Digital Content COST
+
+Depreciation
+
+Dealer Incentives
+
+Digital Marketing
+
+Films Amortisation
+
+G&A
+
+Incentives
+
+Linear Marketing
+
+Programming COST
+
+ROU Building Lease Amort
+
+Sports Amortisation
+
+Salaries
+
+Tech COST
+
+Variations like “film amort”, “rou lease”, “tech cost”, “marketing cost” → match accordingly.
+
+NET REVENUE
+
+Computed as:
+
+Net Revenue = Total Revenue – Total Cost
+(for any Channel × Period × Version)
+
+User may ask:
+
+“Net Revenue”
+
+“NR”
+
+“Net Rev”
+→ all map to Net Revenue.
+
+=====================================================================
+
+DATASET STRUCTURE
+
+=====================================================================
+
+Format:
+
+data{Channel, Account, Date, Version, Amount}
+
 
 Characteristics:
-   • Dataset contains ONLY **leaf channels** (no parents and no “ALL”).
-   • ONLY **Actual** and **Budget** values exist.  
-   • **Forecast** values do NOT exist.
 
-data[298]{Channels,Date,Version,Amount}:
-CORPORATE,Apr (2025),Actual,"-79.7"
-CORPORATE,Apr (2025),Budget,"-77.777"
-CORPORATE,May (2025),Actual,"-69.8"
-CORPORATE,May (2025),Budget,"-67.793"
-CORPORATE,Jun (2025),Actual,"-72.4"
-CORPORATE,Jun (2025),Budget,"-66.445"
-CORPORATE,Jul (2025),Actual,"-60.5"
-CORPORATE,Jul (2025),Budget,"-64.418"
-CORPORATE,Aug (2025),Actual,"-82.5"
-CORPORATE,Aug (2025),Budget,"-78.116"
-CORPORATE,Sep (2025),Actual,"-77.1"
-CORPORATE,Sep (2025),Budget,"-73.847"
-CORPORATE,Oct (2025),Actual,"-70"
-CORPORATE,Oct (2025),Budget,"-71.364"
-CORPORATE,Nov (2025),Actual,"-72.1"
-CORPORATE,Nov (2025),Budget,"-73.385"
-CORPORATE,Dec (2025),Actual,"-61.8"
-CORPORATE,Dec (2025),Budget,"-61.293"
-CORPORATE,Jan (2026),Budget,"-66.72"
-CORPORATE,Feb (2026),Budget,"-64.056"
-CORPORATE,Mar (2026),Budget,"-60.413"
-PIX,Apr (2025),Actual,"0"
-PIX,Apr (2025),Budget,"0"
-PIX,May (2025),Actual,"0"
-PIX,May (2025),Budget,"0"
-PIX,Jun (2025),Actual,"9.2"
-PIX,Jun (2025),Budget,"8.342402"
-PIX,Jul (2025),Actual,"0"
-PIX,Jul (2025),Budget,"0"
-PIX,Aug (2025),Actual,"0"
-PIX,Aug (2025),Budget,"0"
-PIX,Sep (2025),Actual,"9"
-PIX,Sep (2025),Budget,"8.342402"
-PIX,Oct (2025),Actual,"0"
-PIX,Oct (2025),Budget,"0"
-PIX,Nov (2025),Actual,"0"
-PIX,Nov (2025),Budget,"0"
-PIX,Dec (2025),Actual,"9"
-PIX,Dec (2025),Budget,"9.289"
-PIX,Jan (2026),Budget,"0"
-PIX,Feb (2026),Budget,"0"
-PIX,Mar (2026),Budget,"4.293"
-MAX,Apr (2025),Actual,"132.5"
-MAX,Apr (2025),Budget,"132.147904"
-MAX,May (2025),Actual,"134.8"
-MAX,May (2025),Budget,"140.688661"
-MAX,Jun (2025),Actual,"159"
-MAX,Jun (2025),Budget,"145.326674"
-MAX,Jul (2025),Actual,"156.8"
-MAX,Jul (2025),Budget,"156.479955"
-MAX,Aug (2025),Actual,"158.7"
-MAX,Aug (2025),Budget,"152.880086"
-MAX,Sep (2025),Actual,"188"
-MAX,Sep (2025),Budget,"171.218756"
-MAX,Oct (2025),Actual,"145.1"
-MAX,Oct (2025),Budget,"153.834109"
-MAX,Nov (2025),Actual,"136.7"
-MAX,Nov (2025),Budget,"147.793776"
-MAX,Dec (2025),Actual,"146.4"
-MAX,Dec (2025),Budget,"149.557476"
-MAX,Jan (2026),Budget,"148.307476"
-MAX,Feb (2026),Budget,"131.037439"
-MAX,Mar (2026),Budget,"144.027228"
-MAX 1,Apr (2025),Actual,"19.3"
-MAX 1,Apr (2025),Budget,"19.080001"
-MAX 1,May (2025),Actual,"17.1"
-MAX 1,May (2025),Budget,"19.080001"
-MAX 1,Jun (2025),Actual,"20.7"
-MAX 1,Jun (2025),Budget,"19.080001"
-MAX 1,Jul (2025),Actual,"17.3"
-MAX 1,Jul (2025),Budget,"19.080001"
-MAX 1,Aug (2025),Actual,"17.4"
-MAX 1,Aug (2025),Budget,"19.080001"
-MAX 1,Sep (2025),Actual,"19.3"
-MAX 1,Sep (2025),Budget,"19.080001"
-MAX 1,Oct (2025),Actual,"20.3"
-MAX 1,Oct (2025),Budget,"19.080001"
-MAX 1,Nov (2025),Actual,"20.3"
-MAX 1,Nov (2025),Budget,"19.080001"
-MAX 1,Dec (2025),Actual,"19"
-MAX 1,Dec (2025),Budget,"19.080001"
-MAX 1,Jan (2026),Budget,"19.080001"
-MAX 1,Feb (2026),Budget,"19.080001"
-MAX 1,Mar (2026),Budget,"19.080001"
-MAX 2,Apr (2025),Actual,"35.4"
-MAX 2,Apr (2025),Budget,"37.999863"
-MAX 2,May (2025),Actual,"40.4"
-MAX 2,May (2025),Budget,"39.319559"
-MAX 2,Jun (2025),Actual,"40.2"
-MAX 2,Jun (2025),Budget,"41.44257"
-MAX 2,Jul (2025),Actual,"42.8"
-MAX 2,Jul (2025),Budget,"42.877032"
-MAX 2,Aug (2025),Actual,"47.6"
-MAX 2,Aug (2025),Budget,"44.655764"
-MAX 2,Sep (2025),Actual,"43.9"
-MAX 2,Sep (2025),Budget,"41.44257"
-MAX 2,Oct (2025),Actual,"46.8"
-MAX 2,Oct (2025),Budget,"42.877032"
-MAX 2,Nov (2025),Actual,"40.1"
-MAX 2,Nov (2025),Budget,"43.163924"
-MAX 2,Dec (2025),Actual,"48.7"
-MAX 2,Dec (2025),Budget,"44.655764"
-MAX 2,Jan (2026),Budget,"44.655764"
-MAX 2,Feb (2026),Budget,"36.967047"
-MAX 2,Mar (2026),Budget,"41.098301"
-YAY,Apr (2025),Actual,"-73.8"
-YAY,Apr (2025),Budget,"-68.21714"
-YAY,May (2025),Actual,"-67"
-YAY,May (2025),Budget,"-73.680624"
-YAY,Jun (2025),Actual,"-58.5"
-YAY,Jun (2025),Budget,"-61.44977"
-YAY,Jul (2025),Actual,"-50.8"
-YAY,Jul (2025),Budget,"-52.39271"
-YAY,Aug (2025),Actual,"-49.1"
-YAY,Aug (2025),Budget,"-47.520816"
-YAY,Sep (2025),Actual,"-54.8"
-YAY,Sep (2025),Budget,"-52.188867"
-YAY,Oct (2025),Actual,"-43.8"
-YAY,Oct (2025),Budget,"-46.052458"
-YAY,Nov (2025),Actual,"-51.6"
-YAY,Nov (2025),Budget,"-54.588924"
-YAY,Dec (2025),Actual,"-51.5"
-YAY,Dec (2025),Budget,"-55.571249"
-YAY,Jan (2026),Budget,"-40.378924"
-YAY,Feb (2026),Budget,"-36.435381"
-YAY,Mar (2026),Budget,"-35.588961"
-WAH,Apr (2025),Actual,"64"
-WAH,Apr (2025),Budget,"70.589095"
-WAH,May (2025),Actual,"72"
-WAH,May (2025),Budget,"71.889095"
-WAH,Jun (2025),Actual,"74.9"
-WAH,Jun (2025),Budget,"77.960833"
-WAH,Jul (2025),Actual,"70.1"
-WAH,Jul (2025),Budget,"77.860833"
-WAH,Aug (2025),Actual,"87.9"
-WAH,Aug (2025),Budget,"81.908658"
-WAH,Sep (2025),Actual,"80.3"
-WAH,Sep (2025),Budget,"77.960833"
-WAH,Oct (2025),Actual,"75.7"
-WAH,Oct (2025),Budget,"80.308658"
-WAH,Nov (2025),Actual,"88.6"
-WAH,Nov (2025),Budget,"81.808658"
-WAH,Dec (2025),Actual,"73.8"
-WAH,Dec (2025),Budget,"79.934745"
-WAH,Jan (2026),Budget,"79.934745"
-WAH,Feb (2026),Budget,"75.98692"
-WAH,Mar (2026),Budget,"75.88692"
-Motion Pictures,Apr (2025),Actual,"0"
-Motion Pictures,Apr (2025),Budget,"0"
-Motion Pictures,May (2025),Actual,"0"
-Motion Pictures,May (2025),Budget,"0"
-Motion Pictures,Jun (2025),Actual,"0"
-Motion Pictures,Jun (2025),Budget,"0"
-Motion Pictures,Jul (2025),Actual,"0"
-Motion Pictures,Jul (2025),Budget,"0"
-Motion Pictures,Aug (2025),Actual,"0"
-Motion Pictures,Aug (2025),Budget,"0"
-Motion Pictures,Sep (2025),Actual,"0"
-Motion Pictures,Sep (2025),Budget,"0"
-Motion Pictures,Oct (2025),Actual,"0"
-Motion Pictures,Oct (2025),Budget,"0"
-Motion Pictures,Nov (2025),Actual,"0"
-Motion Pictures,Nov (2025),Budget,"0"
-Motion Pictures,Dec (2025),Actual,"0"
-Motion Pictures,Dec (2025),Budget,"0"
-Motion Pictures,Jan (2026),Budget,"0"
-Motion Pictures,Feb (2026),Budget,"0"
-Motion Pictures,Mar (2026),Budget,"0"
-STUDIO NEXT,Apr (2025),Actual,"8.2"
-STUDIO NEXT,Apr (2025),Budget,"8.7"
-STUDIO NEXT,May (2025),Actual,"7.9"
-STUDIO NEXT,May (2025),Budget,"8.7"
-STUDIO NEXT,Jun (2025),Actual,"9.1"
-STUDIO NEXT,Jun (2025),Budget,"8.7"
-STUDIO NEXT,Jul (2025),Actual,"8.6"
-STUDIO NEXT,Jul (2025),Budget,"8.7"
-STUDIO NEXT,Aug (2025),Actual,"8"
-STUDIO NEXT,Aug (2025),Budget,"8.7"
-STUDIO NEXT,Sep (2025),Actual,"8.1"
-STUDIO NEXT,Sep (2025),Budget,"8.7"
-STUDIO NEXT,Oct (2025),Actual,"9.1"
-STUDIO NEXT,Oct (2025),Budget,"8.7"
-STUDIO NEXT,Nov (2025),Actual,"8"
-STUDIO NEXT,Nov (2025),Budget,"8.7"
-STUDIO NEXT,Dec (2025),Actual,"9.6"
-STUDIO NEXT,Dec (2025),Budget,"8.7"
-STUDIO NEXT,Jan (2026),Budget,"8.7"
-STUDIO NEXT,Feb (2026),Budget,"8.7"
-STUDIO NEXT,Mar (2026),Budget,"8.7"
-BBC,Apr (2025),Actual,"-7.9"
-BBC,Apr (2025),Budget,"-8.253319"
-BBC,May (2025),Actual,"-7.5"
-BBC,May (2025),Budget,"-7.868319"
-BBC,Jun (2025),Actual,"-6.2"
-BBC,Jun (2025),Budget,"-5.999944"
-BBC,Jul (2025),Actual,"-8.1"
-BBC,Jul (2025),Budget,"-7.868319"
-BBC,Aug (2025),Actual,"-12.2"
-BBC,Aug (2025),Budget,"-12.593319"
-BBC,Sep (2025),Actual,"-4.2"
-BBC,Sep (2025),Budget,"-5.044944"
-BBC,Oct (2025),Actual,"-8.7"
-BBC,Oct (2025),Budget,"-9.083319"
-BBC,Nov (2025),Actual,"-8.4"
-BBC,Nov (2025),Budget,"-8.368319"
-BBC,Dec (2025),Actual,"-5.1"
-BBC,Dec (2025),Budget,"-4.949944"
-BBC,Jan (2026),Budget,"-7.818319"
-BBC,Feb (2026),Budget,"-8.433319"
-BBC,Mar (2026),Budget,"-4.334944"
-PAL,Apr (2025),Actual,"131.7"
-PAL,Apr (2025),Budget,"118.847324"
-PAL,May (2025),Actual,"125.5"
-PAL,May (2025),Budget,"125.358305"
-PAL,Jun (2025),Actual,"114.6"
-PAL,Jun (2025),Budget,"128.57396"
-PAL,Jul (2025),Actual,"132.6"
-PAL,Jul (2025),Budget,"132.914614"
-PAL,Aug (2025),Actual,"139.4"
-PAL,Aug (2025),Budget,"132.914614"
-PAL,Sep (2025),Actual,"145.5"
-PAL,Sep (2025),Budget,"132.914614"
-PAL,Oct (2025),Actual,"139.3"
-PAL,Oct (2025),Budget,"138.380268"
-PAL,Nov (2025),Actual,"128.1"
-PAL,Nov (2025),Budget,"138.380268"
-PAL,Dec (2025),Actual,"133.3"
-PAL,Dec (2025),Budget,"137.255268"
-PAL,Jan (2026),Budget,"142.720923"
-PAL,Feb (2026),Budget,"142.720923"
-PAL,Mar (2026),Budget,"141.595923"
-SAB,Apr (2025),Actual,"252"
-SAB,Apr (2025),Budget,"171.596132"
-SAB,May (2025),Actual,"138"
-SAB,May (2025),Budget,"186.960387"
-SAB,Jun (2025),Actual,"179.5"
-SAB,Jun (2025),Budget,"161.845941"
-SAB,Jul (2025),Actual,"236.5"
-SAB,Jul (2025),Budget,"245.276235"
-SAB,Aug (2025),Actual,"177.6"
-SAB,Aug (2025),Budget,"198.888093"
-SAB,Sep (2025),Actual,"282.5"
-SAB,Sep (2025),Budget,"328.603788"
-SAB,Oct (2025),Actual,"287.1"
-SAB,Oct (2025),Budget,"310.081972"
-SAB,Nov (2025),Actual,"440.1"
-SAB,Nov (2025),Budget,"392.390321"
-SAB,Dec (2025),Actual,"474.7"
-SAB,Dec (2025),Budget,"405.904808"
-SAB,Jan (2026),Budget,"335.178205"
-SAB,Feb (2026),Budget,"324.744584"
-SAB,Mar (2026),Budget,"391.223871"
-SET,Apr (2025),Actual,"-147.4"
-SET,Apr (2025),Budget,"-136.296425"
-SET,May (2025),Actual,"0.8"
-SET,May (2025),Budget,"-41.044629"
-SET,Jun (2025),Actual,"30.6"
-SET,Jun (2025),Budget,"2.2064"
-SET,Jul (2025),Actual,"87"
-SET,Jul (2025),Budget,"87.49215"
-SET,Aug (2025),Actual,"107.5"
-SET,Aug (2025),Budget,"43.018666"
-SET,Sep (2025),Actual,"51.4"
-SET,Sep (2025),Budget,"114.620968"
-SET,Oct (2025),Actual,"104.8"
-SET,Oct (2025),Budget,"113.727072"
-SET,Nov (2025),Actual,"57.3"
-SET,Nov (2025),Budget,"82.600271"
-SET,Dec (2025),Actual,"49.5"
-SET,Dec (2025),Budget,"50.588337"
-SET,Jan (2026),Budget,"84.104222"
-SET,Feb (2026),Budget,"110.216769"
-SET,Mar (2026),Budget,"129.301427"
-AATH,Apr (2025),Actual,"17.2"
-AATH,Apr (2025),Budget,"18.553326"
-AATH,May (2025),Actual,"20.4"
-AATH,May (2025),Budget,"22.283103"
-AATH,Jun (2025),Actual,"19.8"
-AATH,Jun (2025),Budget,"18.413963"
-AATH,Jul (2025),Actual,"19"
-AATH,Jul (2025),Budget,"21.871751"
-AATH,Aug (2025),Actual,"23.5"
-AATH,Aug (2025),Budget,"22.783103"
-AATH,Sep (2025),Actual,"23.2"
-AATH,Sep (2025),Budget,"21.185235"
-AATH,Oct (2025),Actual,"13.3"
-AATH,Oct (2025),Budget,"13.409743"
-AATH,Nov (2025),Actual,"18.6"
-AATH,Nov (2025),Budget,"17.456177"
-AATH,Dec (2025),Actual,"19.6"
-AATH,Dec (2025),Budget,"18.604068"
-AATH,Jan (2026),Budget,"16.025672"
-AATH,Feb (2026),Budget,"17.259641"
-AATH,Mar (2026),Budget,"19.431347"
-SONY MARATHI,Apr (2025),Actual,"-34.2"
-SONY MARATHI,Apr (2025),Budget,"-33.191001"
-SONY MARATHI,May (2025),Actual,"-22.5"
-SONY MARATHI,May (2025),Budget,"-23.890859"
+Channels = leaf-level only
 
----------------------------------------------------------------------
+Accounts = leaf-level only
+
+Versions = Actual, Budget
+
+No Forecast exists → any forecast question → “Not in dataset”.
+
+=====================================================================
+
 CHANNEL HIERARCHY (FOR ROLL-UPS)
----------------------------------------------------------------------
-These hierarchy nodes DO NOT exist in the dataset. Totals must be computed from their mapped members.
-
-1. Common Cost
-   - CORPORATE
-
-2. English Movies
-   - PIX
-
-3. Hindi Movies
-   - MAX
-   - MAX 1
-   - MAX 2
-
-4. Kids
-   - YAY
-
-5. Mix Content
-   - WAH
-
-6. Production House
-   - Motion Pictures
-   - STUDIO NEXT
-
-7. Program
-   - BBC
-   - PAL
-   - SAB
-   - SET
-
-8. Regional
-   - AATH
-   - SONY MARATHI
-
-9. All Channels (overall top-level roll-up)
-   - Sum **all leaf-level channels** in the dataset.
 
 =====================================================================
+
+These are NOT in the dataset — compute from children:
+
+Common Cost → CORPORATE
+
+English Movies → PIX
+
+Hindi Movies → MAX, MAX 1, MAX 2
+
+Kids → YAY
+
+Mix Content → WAH
+
+Production House → Motion Pictures, STUDIO NEXT
+
+Program → BBC, PAL, SAB, SET
+
+Regional → AATH, SONY MARATHI
+
+All Channels → sum of ALL leaf channels
+
+=====================================================================
+
+ACCOUNT HIERARCHY (FOR ROLL-UPS)
+
+=====================================================================
+
+Compute using child accounts:
+
+REVENUE
+
+Sum of all 14 revenue accounts.
+
+COST
+
+Sum of all 16 cost accounts.
+
+NET REVENUE
+
+= REVENUE – COST
+Always compute dynamically; never stored in dataset.
+
+=====================================================================
+
 AGGREGATION & COMPUTATION LOGIC
-=====================================================================
-
-1. When the user requests a **hierarchy parent node**:
-      e.g., “Hindi Movies”, “Program”, “Regional”, “Kids”, “Common Cost”,  
-            “Production House”, “All Channels”, “All”
-   → ALWAYS compute the value from mapped children.
-
-2. NEVER reply “Not in dataset” for hierarchy parents.
-
-3. Values are computed as:
-      total(Channel X, Period P, Version V)
-      = SUM(Amount of each child channel of X for P & V)
-
-4. Actual vs Budget:
-      variance = Actual – Budget
-      variance% = (variance / Budget) × 100
-
-5. MoM (Month-over-Month):
-      MoM = Current Month – Previous Month
-   Compute only when clearly requested or implied.
-
-6. Forecast:
-      If the user asks for Forecast or Forecast variance:
-           → reply: **“Not in dataset”**
 
 =====================================================================
+
+1. When user asks for a parent (Channel or Account):
+
+Always compute as:
+
+Total(X, Period P, Version V) = SUM(Amount of each child of X for P & V)
+
+
+Never reply “Not in dataset” for valid hierarchy parents.
+
+2. Actual vs Budget
+Variance = Actual – Budget
+Variance% = (Variance / Budget) × 100
+
+3. MoM change
+
+Compute only when asked:
+
+MoM = Current Month – Previous Month
+
+4. Cross-dimension Roll-ups
+
+Fully supported:
+
+Channel × Account
+
+Channel × Revenue / Cost
+
+Account × Region
+
+Net Revenue for any roll-up
+
+Example:
+“Net Revenue for Hindi Movies in Jul 2025”
+
+5. Forecast = Not in dataset
+
+=====================================================================
+
 FISCAL YEAR LOGIC (IF REQUESTED)
-=====================================================================
-Assume:
-   • FY2025 = Apr 2025 → Mar 2026
-
-Quarter definitions:
-   Q1 = Apr–Jun  
-   Q2 = Jul–Sep  
-   Q3 = Oct–Dec  
-   Q4 = Jan–Mar  
-
-If user says “2025” without specifying:
-   → Interpret as Apr–Dec 2025 (FY2025 partial).
 
 =====================================================================
+
+FY2025 = Apr 2025 → Mar 2026
+
+Quarters:
+
+Q1 = Apr–Jun
+
+Q2 = Jul–Sep
+
+Q3 = Oct–Dec
+
+Q4 = Jan–Mar
+
+If user says “2025”:
+→ Interpret as Apr–Dec 2025 (FY2025 YTD).
+
+=====================================================================
+
 ANSWERING STYLE
-=====================================================================
-- Use **tight, structured tables** for multi-period or multi-channel results.
-- Use bold labels: **Actual**, **Budget**, **Variance**, **% Variance**, **Total**.
-- Keep answers short, numerical, and business-focused.
-- If the question is unclear (missing month/version/level), ask for clarification.
 
 =====================================================================
-EXAMPLE QUERIES USERS MAY ASK
+
+Provide structured tables for multi-period or multi-entity responses.
+
+Use bold labels: Actual, Budget, Variance, %Variance, Total.
+
+Keep responses crisp, numeric, and business-friendly.
+
+If information is incomplete (missing version, month, dimension), ask for clarification.
+
 =====================================================================
-- What is the Budget for Hindi Movies in 2025?
-- Show Actual vs Budget for Apr–Jun 2025.
-- Give MoM change in Actuals for MAX 2.
-- Total Budget for Program in Q2 FY2025.
-- Roll up Production House for Nov 2025.
-- What is the overall Actual vs Budget for All Channels?
+
+EXAMPLE QUERIES USERS MAY ASK
+
+=====================================================================
+
+“Revenue for Hindi Movies in FY2025 Q2”
+
+“Net Revenue for All Channels in 2025”
+
+“Actual vs Budget for Ad Agency Incentives in Jun 2025”
+
+“MoM change in Subscription Domestic Revenue for MAX 2”
+
+“Cost roll-up for Program in Aug 2025”
+
+“Channel + Account roll-up: Revenue for Regional in May 2025”
+
+“Net Revenue variance for Production House in Q3”
+
+=====================================================================
+
+DATASET – CHANNEL PERFORMANCE
+
+=====================================================================
+
+data[1491]{Channels,Account,Date,Version,Amount}:
+AATH,Ad Agency Incentives,Apr (2025),Actual,"-1.70"
+AATH,Ad Agency Incentives,Apr (2025),Budget,"-1.76"
+AATH,Ad Agency Incentives,May (2025),Actual,"-1.80"
+AATH,Ad Agency Incentives,May (2025),Budget,"-1.82"
+AATH,Ad Agency Incentives,Jun (2025),Actual,"-1.70"
+AATH,Ad Agency Incentives,Jun (2025),Budget,"-1.73"
+AATH,Ad Agency Incentives,Jul (2025),Actual,"-1.60"
+AATH,Ad Agency Incentives,Jul (2025),Budget,"-1.76"
+AATH,Ad Agency Incentives,Aug (2025),Actual,"-1.90"
+AATH,Ad Agency Incentives,Aug (2025),Budget,"-1.82"
+AATH,Ad Agency Incentives,Sep (2025),Actual,"-1.80"
+AATH,Ad Agency Incentives,Sep (2025),Budget,"-1.67"
+AATH,Ad Agency Incentives,Oct (2025),Actual,"-1.60"
+AATH,Ad Agency Incentives,Oct (2025),Budget,"-1.63"
+AATH,Ad Agency Incentives,Nov (2025),Actual,"-1.60"
+AATH,Ad Agency Incentives,Nov (2025),Budget,"-1.48"
+AATH,Ad Agency Incentives,Dec (2025),Actual,"-1.50"
+AATH,Ad Agency Incentives,Dec (2025),Budget,"-1.59"
+AATH,Ad Agency Incentives,Jan (2026),Budget,"-1.57"
+AATH,Ad Agency Incentives,Feb (2026),Budget,"-1.41"
+AATH,Ad Agency Incentives,Mar (2026),Budget,"-1.60"
+AATH,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"27.00"
+AATH,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"28.41"
+AATH,Net Advertising REV BAU (Domestic),May (2025),Actual,"27.90"
+AATH,Net Advertising REV BAU (Domestic),May (2025),Budget,"29.36"
+AATH,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"28.70"
+AATH,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"27.89"
+AATH,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"25.70"
+AATH,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"28.27"
+AATH,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"30.10"
+AATH,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"29.36"
+AATH,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"28.80"
+AATH,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"26.83"
+AATH,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"26.00"
+AATH,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"26.21"
+AATH,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"24.90"
+AATH,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"23.79"
+AATH,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"27.20"
+AATH,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"25.67"
+AATH,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"25.21"
+AATH,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"22.77"
+AATH,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"25.75"
+AATH,Syndication REV,Apr (2025),Actual,"0.00"
+AATH,Syndication REV,Apr (2025),Budget,"0.00"
+AATH,Syndication REV,May (2025),Actual,"0.70"
+AATH,Syndication REV,May (2025),Budget,"0.75"
+AATH,Syndication REV,Jun (2025),Actual,"0.80"
+AATH,Syndication REV,Jun (2025),Budget,"0.75"
+AATH,Syndication REV,Jul (2025),Actual,"0.70"
+AATH,Syndication REV,Jul (2025),Budget,"0.75"
+AATH,Syndication REV,Aug (2025),Actual,"1.20"
+AATH,Syndication REV,Aug (2025),Budget,"1.25"
+AATH,Syndication REV,Sep (2025),Actual,"1.50"
+AATH,Syndication REV,Sep (2025),Budget,"1.50"
+AATH,Syndication REV,Oct (2025),Actual,"2.00"
+AATH,Syndication REV,Oct (2025),Budget,"2.00"
+AATH,Syndication REV,Nov (2025),Actual,"1.60"
+AATH,Syndication REV,Nov (2025),Budget,"1.50"
+AATH,Syndication REV,Dec (2025),Actual,"1.40"
+AATH,Syndication REV,Dec (2025),Budget,"1.50"
+AATH,Syndication REV,Jan (2026),Budget,"1.25"
+AATH,Syndication REV,Feb (2026),Budget,"1.25"
+AATH,Syndication REV,Mar (2026),Budget,"1.25"
+AATH,Linear Marketing,Apr (2025),Actual,"-3.30"
+AATH,Linear Marketing,Apr (2025),Budget,"-3.19"
+AATH,Linear Marketing,May (2025),Actual,"-1.20"
+AATH,Linear Marketing,May (2025),Budget,"-1.10"
+AATH,Linear Marketing,Jun (2025),Actual,"-3.40"
+AATH,Linear Marketing,Jun (2025),Budget,"-3.59"
+AATH,Linear Marketing,Jul (2025),Actual,"-0.50"
+AATH,Linear Marketing,Jul (2025),Budget,"-0.49"
+AATH,Linear Marketing,Aug (2025),Actual,"-1.10"
+AATH,Linear Marketing,Aug (2025),Budget,"-1.10"
+AATH,Linear Marketing,Sep (2025),Actual,"-0.50"
+AATH,Linear Marketing,Sep (2025),Budget,"-0.58"
+AATH,Linear Marketing,Oct (2025),Actual,"-8.50"
+AATH,Linear Marketing,Oct (2025),Budget,"-8.27"
+AATH,Linear Marketing,Nov (2025),Actual,"-1.50"
+AATH,Linear Marketing,Nov (2025),Budget,"-1.45"
+AATH,Linear Marketing,Dec (2025),Actual,"-2.20"
+AATH,Linear Marketing,Dec (2025),Budget,"-2.07"
+AATH,Linear Marketing,Jan (2026),Budget,"-3.96"
+AATH,Linear Marketing,Feb (2026),Budget,"-0.44"
+AATH,Linear Marketing,Mar (2026),Budget,"-1.07"
+AATH,Programming COST,Apr (2025),Actual,"-4.80"
+AATH,Programming COST,Apr (2025),Budget,"-4.90"
+AATH,Programming COST,May (2025),Actual,"-5.20"
+AATH,Programming COST,May (2025),Budget,"-4.90"
+AATH,Programming COST,Jun (2025),Actual,"-4.60"
+AATH,Programming COST,Jun (2025),Budget,"-4.90"
+AATH,Programming COST,Jul (2025),Actual,"-5.30"
+AATH,Programming COST,Jul (2025),Budget,"-4.90"
+AATH,Programming COST,Aug (2025),Actual,"-4.80"
+AATH,Programming COST,Aug (2025),Budget,"-4.90"
+AATH,Programming COST,Sep (2025),Actual,"-4.80"
+AATH,Programming COST,Sep (2025),Budget,"-4.90"
+AATH,Programming COST,Oct (2025),Actual,"-4.60"
+AATH,Programming COST,Oct (2025),Budget,"-4.90"
+AATH,Programming COST,Nov (2025),Actual,"-4.80"
+AATH,Programming COST,Nov (2025),Budget,"-4.90"
+AATH,Programming COST,Dec (2025),Actual,"-5.30"
+AATH,Programming COST,Dec (2025),Budget,"-4.90"
+AATH,Programming COST,Jan (2026),Budget,"-4.90"
+AATH,Programming COST,Feb (2026),Budget,"-4.90"
+AATH,Programming COST,Mar (2026),Budget,"-4.90"
+BBC,Ad Agency Incentives,Apr (2025),Actual,"0.00"
+BBC,Ad Agency Incentives,Apr (2025),Budget,"0.00"
+BBC,Ad Agency Incentives,May (2025),Actual,"0.00"
+BBC,Ad Agency Incentives,May (2025),Budget,"0.00"
+BBC,Ad Agency Incentives,Jun (2025),Actual,"-0.20"
+BBC,Ad Agency Incentives,Jun (2025),Budget,"-0.23"
+BBC,Ad Agency Incentives,Jul (2025),Actual,"0.00"
+BBC,Ad Agency Incentives,Jul (2025),Budget,"0.00"
+BBC,Ad Agency Incentives,Aug (2025),Actual,"0.00"
+BBC,Ad Agency Incentives,Aug (2025),Budget,"0.00"
+BBC,Ad Agency Incentives,Sep (2025),Actual,"-0.20"
+BBC,Ad Agency Incentives,Sep (2025),Budget,"-0.23"
+BBC,Ad Agency Incentives,Oct (2025),Actual,"0.00"
+BBC,Ad Agency Incentives,Oct (2025),Budget,"0.00"
+BBC,Ad Agency Incentives,Nov (2025),Actual,"0.00"
+BBC,Ad Agency Incentives,Nov (2025),Budget,"0.00"
+BBC,Ad Agency Incentives,Dec (2025),Actual,"-0.20"
+BBC,Ad Agency Incentives,Dec (2025),Budget,"-0.23"
+BBC,Ad Agency Incentives,Jan (2026),Budget,"0.00"
+BBC,Ad Agency Incentives,Feb (2026),Budget,"0.00"
+BBC,Ad Agency Incentives,Mar (2026),Budget,"-0.23"
+BBC,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),May (2025),Actual,"0.00"
+BBC,Net Advertising REV BAU (Domestic),May (2025),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"3.50"
+BBC,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"3.75"
+BBC,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"4.00"
+BBC,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"3.75"
+BBC,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"3.40"
+BBC,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"3.75"
+BBC,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"0.00"
+BBC,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"3.75"
+BBC,Syndication REV,Apr (2025),Actual,"0.00"
+BBC,Syndication REV,Apr (2025),Budget,"0.00"
+BBC,Syndication REV,May (2025),Actual,"0.00"
+BBC,Syndication REV,May (2025),Budget,"0.00"
+BBC,Syndication REV,Jun (2025),Actual,"0.00"
+BBC,Syndication REV,Jun (2025),Budget,"0.00"
+BBC,Syndication REV,Jul (2025),Actual,"0.00"
+BBC,Syndication REV,Jul (2025),Budget,"0.00"
+BBC,Syndication REV,Aug (2025),Actual,"0.00"
+BBC,Syndication REV,Aug (2025),Budget,"0.00"
+BBC,Syndication REV,Sep (2025),Actual,"0.00"
+BBC,Syndication REV,Sep (2025),Budget,"0.00"
+BBC,Syndication REV,Oct (2025),Actual,"0.00"
+BBC,Syndication REV,Oct (2025),Budget,"0.00"
+BBC,Syndication REV,Nov (2025),Actual,"0.00"
+BBC,Syndication REV,Nov (2025),Budget,"0.00"
+BBC,Syndication REV,Dec (2025),Actual,"0.00"
+BBC,Syndication REV,Dec (2025),Budget,"0.00"
+BBC,Syndication REV,Jan (2026),Budget,"0.00"
+BBC,Syndication REV,Feb (2026),Budget,"0.00"
+BBC,Syndication REV,Mar (2026),Budget,"0.00"
+BBC,Linear Marketing,Apr (2025),Actual,"-0.90"
+BBC,Linear Marketing,Apr (2025),Budget,"-0.92"
+BBC,Linear Marketing,May (2025),Actual,"-0.50"
+BBC,Linear Marketing,May (2025),Budget,"-0.53"
+BBC,Linear Marketing,Jun (2025),Actual,"-2.10"
+BBC,Linear Marketing,Jun (2025),Budget,"-2.18"
+BBC,Linear Marketing,Jul (2025),Actual,"-0.50"
+BBC,Linear Marketing,Jul (2025),Budget,"-0.53"
+BBC,Linear Marketing,Aug (2025),Actual,"-5.50"
+BBC,Linear Marketing,Aug (2025),Budget,"-5.26"
+BBC,Linear Marketing,Sep (2025),Actual,"-1.20"
+BBC,Linear Marketing,Sep (2025),Budget,"-1.23"
+BBC,Linear Marketing,Oct (2025),Actual,"-1.60"
+BBC,Linear Marketing,Oct (2025),Budget,"-1.75"
+BBC,Linear Marketing,Nov (2025),Actual,"-1.10"
+BBC,Linear Marketing,Nov (2025),Budget,"-1.03"
+BBC,Linear Marketing,Dec (2025),Actual,"-1.20"
+BBC,Linear Marketing,Dec (2025),Budget,"-1.13"
+BBC,Linear Marketing,Jan (2026),Budget,"-0.48"
+BBC,Linear Marketing,Feb (2026),Budget,"-1.10"
+BBC,Linear Marketing,Mar (2026),Budget,"-0.52"
+BBC,Programming COST,Apr (2025),Actual,"-7.00"
+BBC,Programming COST,Apr (2025),Budget,"-7.34"
+BBC,Programming COST,May (2025),Actual,"-7.00"
+BBC,Programming COST,May (2025),Budget,"-7.34"
+BBC,Programming COST,Jun (2025),Actual,"-7.40"
+BBC,Programming COST,Jun (2025),Budget,"-7.34"
+BBC,Programming COST,Jul (2025),Actual,"-7.60"
+BBC,Programming COST,Jul (2025),Budget,"-7.34"
+BBC,Programming COST,Aug (2025),Actual,"-6.70"
+BBC,Programming COST,Aug (2025),Budget,"-7.34"
+BBC,Programming COST,Sep (2025),Actual,"-6.80"
+BBC,Programming COST,Sep (2025),Budget,"-7.34"
+BBC,Programming COST,Oct (2025),Actual,"-7.10"
+BBC,Programming COST,Oct (2025),Budget,"-7.34"
+BBC,Programming COST,Nov (2025),Actual,"-7.30"
+BBC,Programming COST,Nov (2025),Budget,"-7.34"
+BBC,Programming COST,Dec (2025),Actual,"-7.10"
+BBC,Programming COST,Dec (2025),Budget,"-7.34"
+BBC,Programming COST,Jan (2026),Budget,"-7.34"
+BBC,Programming COST,Feb (2026),Budget,"-7.34"
+BBC,Programming COST,Mar (2026),Budget,"-7.34"
+CORPORATE,Ad Agency Incentives,Apr (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Apr (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,May (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,May (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Jun (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Jun (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Jul (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Jul (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Aug (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Aug (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Sep (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Sep (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Oct (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Oct (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Nov (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Nov (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Dec (2025),Actual,"0.00"
+CORPORATE,Ad Agency Incentives,Dec (2025),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Jan (2026),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Feb (2026),Budget,"0.00"
+CORPORATE,Ad Agency Incentives,Mar (2026),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),May (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),May (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"0.00"
+CORPORATE,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"0.00"
+CORPORATE,Linear Marketing,Apr (2025),Actual,"-19.20"
+CORPORATE,Linear Marketing,Apr (2025),Budget,"-20.98"
+CORPORATE,Linear Marketing,May (2025),Actual,"-24.80"
+CORPORATE,Linear Marketing,May (2025),Budget,"-24.79"
+CORPORATE,Linear Marketing,Jun (2025),Actual,"-24.90"
+CORPORATE,Linear Marketing,Jun (2025),Budget,"-22.75"
+CORPORATE,Linear Marketing,Jul (2025),Actual,"-17.90"
+CORPORATE,Linear Marketing,Jul (2025),Budget,"-18.72"
+CORPORATE,Linear Marketing,Aug (2025),Actual,"-31.10"
+CORPORATE,Linear Marketing,Aug (2025),Budget,"-29.42"
+CORPORATE,Linear Marketing,Sep (2025),Actual,"-28.20"
+CORPORATE,Linear Marketing,Sep (2025),Budget,"-26.55"
+CORPORATE,Linear Marketing,Oct (2025),Actual,"-28.90"
+CORPORATE,Linear Marketing,Oct (2025),Budget,"-26.86"
+CORPORATE,Linear Marketing,Nov (2025),Actual,"-29.60"
+CORPORATE,Linear Marketing,Nov (2025),Budget,"-29.09"
+CORPORATE,Linear Marketing,Dec (2025),Actual,"-16.90"
+CORPORATE,Linear Marketing,Dec (2025),Budget,"-17.09"
+CORPORATE,Linear Marketing,Jan (2026),Budget,"-22.12"
+CORPORATE,Linear Marketing,Feb (2026),Budget,"-19.36"
+CORPORATE,Linear Marketing,Mar (2026),Budget,"-17.11"
+CORPORATE,Programming COST,Apr (2025),Actual,"-60.50"
+CORPORATE,Programming COST,Apr (2025),Budget,"-56.80"
+CORPORATE,Programming COST,May (2025),Actual,"-45.00"
+CORPORATE,Programming COST,May (2025),Budget,"-43.00"
+CORPORATE,Programming COST,Jun (2025),Actual,"-47.50"
+CORPORATE,Programming COST,Jun (2025),Budget,"-43.70"
+CORPORATE,Programming COST,Jul (2025),Actual,"-42.60"
+CORPORATE,Programming COST,Jul (2025),Budget,"-45.70"
+CORPORATE,Programming COST,Aug (2025),Actual,"-51.40"
+CORPORATE,Programming COST,Aug (2025),Budget,"-48.70"
+CORPORATE,Programming COST,Sep (2025),Actual,"-48.90"
+CORPORATE,Programming COST,Sep (2025),Budget,"-47.30"
+CORPORATE,Programming COST,Oct (2025),Actual,"-41.10"
+CORPORATE,Programming COST,Oct (2025),Budget,"-44.50"
+CORPORATE,Programming COST,Nov (2025),Actual,"-42.50"
+CORPORATE,Programming COST,Nov (2025),Budget,"-44.30"
+CORPORATE,Programming COST,Dec (2025),Actual,"-44.90"
+CORPORATE,Programming COST,Dec (2025),Budget,"-44.20"
+CORPORATE,Programming COST,Jan (2026),Budget,"-44.60"
+CORPORATE,Programming COST,Feb (2026),Budget,"-44.70"
+CORPORATE,Programming COST,Mar (2026),Budget,"-43.30"
+MAX,Ad Agency Incentives,Apr (2025),Actual,"-9.40"
+MAX,Ad Agency Incentives,Apr (2025),Budget,"-9.22"
+MAX,Ad Agency Incentives,May (2025),Actual,"-8.60"
+MAX,Ad Agency Incentives,May (2025),Budget,"-9.51"
+MAX,Ad Agency Incentives,Jun (2025),Actual,"-10.40"
+MAX,Ad Agency Incentives,Jun (2025),Budget,"-9.67"
+MAX,Ad Agency Incentives,Jul (2025),Actual,"-9.60"
+MAX,Ad Agency Incentives,Jul (2025),Budget,"-10.40"
+MAX,Ad Agency Incentives,Aug (2025),Actual,"-10.20"
+MAX,Ad Agency Incentives,Aug (2025),Budget,"-10.40"
+MAX,Ad Agency Incentives,Sep (2025),Actual,"-12.40"
+MAX,Ad Agency Incentives,Sep (2025),Budget,"-11.38"
+MAX,Ad Agency Incentives,Oct (2025),Actual,"-9.70"
+MAX,Ad Agency Incentives,Oct (2025),Budget,"-10.24"
+MAX,Ad Agency Incentives,Nov (2025),Actual,"-9.00"
+MAX,Ad Agency Incentives,Nov (2025),Budget,"-9.67"
+MAX,Ad Agency Incentives,Dec (2025),Actual,"-10.30"
+MAX,Ad Agency Incentives,Dec (2025),Budget,"-9.98"
+MAX,Ad Agency Incentives,Jan (2026),Budget,"-9.98"
+MAX,Ad Agency Incentives,Feb (2026),Budget,"-8.57"
+MAX,Ad Agency Incentives,Mar (2026),Budget,"-9.42"
+MAX,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"149.10"
+MAX,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"148.53"
+MAX,Net Advertising REV BAU (Domestic),May (2025),Actual,"146.60"
+MAX,Net Advertising REV BAU (Domestic),May (2025),Budget,"153.15"
+MAX,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"169.90"
+MAX,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"155.78"
+MAX,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"166.60"
+MAX,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"167.46"
+MAX,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"174.20"
+MAX,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"167.46"
+MAX,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"201.50"
+MAX,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"183.33"
+MAX,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"156.70"
+MAX,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"164.88"
+MAX,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"144.60"
+MAX,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"155.78"
+MAX,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"157.40"
+MAX,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"160.63"
+MAX,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"160.63"
+MAX,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"138.01"
+MAX,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"151.72"
+MAX,Syndication REV,Apr (2025),Actual,"0.00"
+MAX,Syndication REV,Apr (2025),Budget,"0.00"
+MAX,Syndication REV,May (2025),Actual,"6.00"
+MAX,Syndication REV,May (2025),Budget,"6.50"
+MAX,Syndication REV,Jun (2025),Actual,"6.90"
+MAX,Syndication REV,Jun (2025),Budget,"6.50"
+MAX,Syndication REV,Jul (2025),Actual,"6.70"
+MAX,Syndication REV,Jul (2025),Budget,"6.50"
+MAX,Syndication REV,Aug (2025),Actual,"6.50"
+MAX,Syndication REV,Aug (2025),Budget,"7.15"
+MAX,Syndication REV,Sep (2025),Actual,"6.40"
+MAX,Syndication REV,Sep (2025),Budget,"6.50"
+MAX,Syndication REV,Oct (2025),Actual,"6.00"
+MAX,Syndication REV,Oct (2025),Budget,"6.50"
+MAX,Syndication REV,Nov (2025),Actual,"8.30"
+MAX,Syndication REV,Nov (2025),Budget,"8.67"
+MAX,Syndication REV,Dec (2025),Actual,"8.80"
+MAX,Syndication REV,Dec (2025),Budget,"8.67"
+MAX,Syndication REV,Jan (2026),Budget,"8.67"
+MAX,Syndication REV,Feb (2026),Budget,"8.67"
+MAX,Syndication REV,Mar (2026),Budget,"8.67"
+MAX,Linear Marketing,Apr (2025),Actual,"-2.70"
+MAX,Linear Marketing,Apr (2025),Budget,"-2.49"
+MAX,Linear Marketing,May (2025),Actual,"-4.70"
+MAX,Linear Marketing,May (2025),Budget,"-4.79"
+MAX,Linear Marketing,Jun (2025),Actual,"-2.60"
+MAX,Linear Marketing,Jun (2025),Budget,"-2.61"
+MAX,Linear Marketing,Jul (2025),Actual,"-2.60"
+MAX,Linear Marketing,Jul (2025),Budget,"-2.42"
+MAX,Linear Marketing,Aug (2025),Actual,"-7.10"
+MAX,Linear Marketing,Aug (2025),Budget,"-6.67"
+MAX,Linear Marketing,Sep (2025),Actual,"-2.80"
+MAX,Linear Marketing,Sep (2025),Budget,"-2.56"
+MAX,Linear Marketing,Oct (2025),Actual,"-2.90"
+MAX,Linear Marketing,Oct (2025),Budget,"-2.64"
+MAX,Linear Marketing,Nov (2025),Actual,"-2.30"
+MAX,Linear Marketing,Nov (2025),Budget,"-2.31"
+MAX,Linear Marketing,Dec (2025),Actual,"-4.70"
+MAX,Linear Marketing,Dec (2025),Budget,"-5.10"
+MAX,Linear Marketing,Jan (2026),Budget,"-6.35"
+MAX,Linear Marketing,Feb (2026),Budget,"-2.40"
+MAX,Linear Marketing,Mar (2026),Budget,"-2.27"
+MAX,Programming COST,Apr (2025),Actual,"-4.50"
+MAX,Programming COST,Apr (2025),Budget,"-4.67"
+MAX,Programming COST,May (2025),Actual,"-4.50"
+MAX,Programming COST,May (2025),Budget,"-4.67"
+MAX,Programming COST,Jun (2025),Actual,"-4.80"
+MAX,Programming COST,Jun (2025),Budget,"-4.67"
+MAX,Programming COST,Jul (2025),Actual,"-4.30"
+MAX,Programming COST,Jul (2025),Budget,"-4.67"
+MAX,Programming COST,Aug (2025),Actual,"-4.70"
+MAX,Programming COST,Aug (2025),Budget,"-4.67"
+MAX,Programming COST,Sep (2025),Actual,"-4.70"
+MAX,Programming COST,Sep (2025),Budget,"-4.67"
+MAX,Programming COST,Oct (2025),Actual,"-5.00"
+MAX,Programming COST,Oct (2025),Budget,"-4.67"
+MAX,Programming COST,Nov (2025),Actual,"-4.90"
+MAX,Programming COST,Nov (2025),Budget,"-4.67"
+MAX,Programming COST,Dec (2025),Actual,"-4.80"
+MAX,Programming COST,Dec (2025),Budget,"-4.67"
+MAX,Programming COST,Jan (2026),Budget,"-4.67"
+MAX,Programming COST,Feb (2026),Budget,"-4.67"
+MAX,Programming COST,Mar (2026),Budget,"-4.67"
+MAX 1,Ad Agency Incentives,Apr (2025),Actual,"-1.10"
+MAX 1,Ad Agency Incentives,Apr (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,May (2025),Actual,"-1.30"
+MAX 1,Ad Agency Incentives,May (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Jun (2025),Actual,"-1.30"
+MAX 1,Ad Agency Incentives,Jun (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Jul (2025),Actual,"-1.20"
+MAX 1,Ad Agency Incentives,Jul (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Aug (2025),Actual,"-1.20"
+MAX 1,Ad Agency Incentives,Aug (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Sep (2025),Actual,"-1.30"
+MAX 1,Ad Agency Incentives,Sep (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Oct (2025),Actual,"-1.10"
+MAX 1,Ad Agency Incentives,Oct (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Nov (2025),Actual,"-1.30"
+MAX 1,Ad Agency Incentives,Nov (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Dec (2025),Actual,"-1.30"
+MAX 1,Ad Agency Incentives,Dec (2025),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Jan (2026),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Feb (2026),Budget,"-1.23"
+MAX 1,Ad Agency Incentives,Mar (2026),Budget,"-1.23"
+MAX 1,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"21.90"
+MAX 1,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),May (2025),Actual,"19.70"
+MAX 1,Net Advertising REV BAU (Domestic),May (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"23.50"
+MAX 1,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"19.90"
+MAX 1,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"19.80"
+MAX 1,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"21.90"
+MAX 1,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"22.60"
+MAX 1,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"22.90"
+MAX 1,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"21.80"
+MAX 1,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"21.67"
+MAX 1,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"21.67"
+MAX 1,Syndication REV,Apr (2025),Actual,"0.00"
+MAX 1,Syndication REV,Apr (2025),Budget,"0.00"
+MAX 1,Syndication REV,May (2025),Actual,"0.00"
+MAX 1,Syndication REV,May (2025),Budget,"0.00"
+MAX 1,Syndication REV,Jun (2025),Actual,"0.00"
+MAX 1,Syndication REV,Jun (2025),Budget,"0.00"
+MAX 1,Syndication REV,Jul (2025),Actual,"0.00"
+MAX 1,Syndication REV,Jul (2025),Budget,"0.00"
+MAX 1,Syndication REV,Aug (2025),Actual,"0.00"
+MAX 1,Syndication REV,Aug (2025),Budget,"0.00"
+MAX 1,Syndication REV,Sep (2025),Actual,"0.00"
+MAX 1,Syndication REV,Sep (2025),Budget,"0.00"
+MAX 1,Syndication REV,Oct (2025),Actual,"0.00"
+MAX 1,Syndication REV,Oct (2025),Budget,"0.00"
+MAX 1,Syndication REV,Nov (2025),Actual,"0.00"
+MAX 1,Syndication REV,Nov (2025),Budget,"0.00"
+MAX 1,Syndication REV,Dec (2025),Actual,"0.00"
+MAX 1,Syndication REV,Dec (2025),Budget,"0.00"
+MAX 1,Syndication REV,Jan (2026),Budget,"0.00"
+MAX 1,Syndication REV,Feb (2026),Budget,"0.00"
+MAX 1,Syndication REV,Mar (2026),Budget,"0.00"
+MAX 1,Linear Marketing,Apr (2025),Actual,"-1.50"
+MAX 1,Linear Marketing,Apr (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,May (2025),Actual,"-1.30"
+MAX 1,Linear Marketing,May (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Jun (2025),Actual,"-1.50"
+MAX 1,Linear Marketing,Jun (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Jul (2025),Actual,"-1.40"
+MAX 1,Linear Marketing,Jul (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Aug (2025),Actual,"-1.20"
+MAX 1,Linear Marketing,Aug (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Sep (2025),Actual,"-1.30"
+MAX 1,Linear Marketing,Sep (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Oct (2025),Actual,"-1.20"
+MAX 1,Linear Marketing,Oct (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Nov (2025),Actual,"-1.30"
+MAX 1,Linear Marketing,Nov (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Dec (2025),Actual,"-1.50"
+MAX 1,Linear Marketing,Dec (2025),Budget,"-1.36"
+MAX 1,Linear Marketing,Jan (2026),Budget,"-1.36"
+MAX 1,Linear Marketing,Feb (2026),Budget,"-1.36"
+MAX 1,Linear Marketing,Mar (2026),Budget,"-1.36"
+MAX 1,Programming COST,Apr (2025),Actual,"0.00"
+MAX 1,Programming COST,Apr (2025),Budget,"0.00"
+MAX 1,Programming COST,May (2025),Actual,"0.00"
+MAX 1,Programming COST,May (2025),Budget,"0.00"
+MAX 1,Programming COST,Jun (2025),Actual,"0.00"
+MAX 1,Programming COST,Jun (2025),Budget,"0.00"
+MAX 1,Programming COST,Jul (2025),Actual,"0.00"
+MAX 1,Programming COST,Jul (2025),Budget,"0.00"
+MAX 1,Programming COST,Aug (2025),Actual,"0.00"
+MAX 1,Programming COST,Aug (2025),Budget,"0.00"
+MAX 1,Programming COST,Sep (2025),Actual,"0.00"
+MAX 1,Programming COST,Sep (2025),Budget,"0.00"
+MAX 1,Programming COST,Oct (2025),Actual,"0.00"
+MAX 1,Programming COST,Oct (2025),Budget,"0.00"
+MAX 1,Programming COST,Nov (2025),Actual,"0.00"
+MAX 1,Programming COST,Nov (2025),Budget,"0.00"
+MAX 1,Programming COST,Dec (2025),Actual,"0.00"
+MAX 1,Programming COST,Dec (2025),Budget,"0.00"
+MAX 1,Programming COST,Jan (2026),Budget,"0.00"
+MAX 1,Programming COST,Feb (2026),Budget,"0.00"
+MAX 1,Programming COST,Mar (2026),Budget,"0.00"
+MAX 2,Ad Agency Incentives,Apr (2025),Actual,"-2.50"
+MAX 2,Ad Agency Incentives,Apr (2025),Budget,"-2.65"
+MAX 2,Ad Agency Incentives,May (2025),Actual,"-2.60"
+MAX 2,Ad Agency Incentives,May (2025),Budget,"-2.74"
+MAX 2,Ad Agency Incentives,Jun (2025),Actual,"-3.00"
+MAX 2,Ad Agency Incentives,Jun (2025),Budget,"-2.88"
+MAX 2,Ad Agency Incentives,Jul (2025),Actual,"-3.10"
+MAX 2,Ad Agency Incentives,Jul (2025),Budget,"-2.97"
+MAX 2,Ad Agency Incentives,Aug (2025),Actual,"-3.30"
+MAX 2,Ad Agency Incentives,Aug (2025),Budget,"-3.09"
+MAX 2,Ad Agency Incentives,Sep (2025),Actual,"-2.90"
+MAX 2,Ad Agency Incentives,Sep (2025),Budget,"-2.88"
+MAX 2,Ad Agency Incentives,Oct (2025),Actual,"-2.80"
+MAX 2,Ad Agency Incentives,Oct (2025),Budget,"-2.97"
+MAX 2,Ad Agency Incentives,Nov (2025),Actual,"-3.20"
+MAX 2,Ad Agency Incentives,Nov (2025),Budget,"-2.99"
+MAX 2,Ad Agency Incentives,Dec (2025),Actual,"-3.10"
+MAX 2,Ad Agency Incentives,Dec (2025),Budget,"-3.09"
+MAX 2,Ad Agency Incentives,Jan (2026),Budget,"-3.09"
+MAX 2,Ad Agency Incentives,Feb (2026),Budget,"-2.58"
+MAX 2,Ad Agency Incentives,Mar (2026),Budget,"-2.85"
+MAX 2,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"39.90"
+MAX 2,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"42.62"
+MAX 2,Net Advertising REV BAU (Domestic),May (2025),Actual,"45.00"
+MAX 2,Net Advertising REV BAU (Domestic),May (2025),Budget,"44.04"
+MAX 2,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"45.10"
+MAX 2,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"46.33"
+MAX 2,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"47.80"
+MAX 2,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"47.87"
+MAX 2,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"53.00"
+MAX 2,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"49.79"
+MAX 2,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"48.80"
+MAX 2,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"46.33"
+MAX 2,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"51.70"
+MAX 2,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"47.87"
+MAX 2,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"45.30"
+MAX 2,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"48.18"
+MAX 2,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"54.00"
+MAX 2,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"49.79"
+MAX 2,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"49.79"
+MAX 2,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"41.51"
+MAX 2,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"45.96"
+MAX 2,Syndication REV,Apr (2025),Actual,"0.00"
+MAX 2,Syndication REV,Apr (2025),Budget,"0.00"
+MAX 2,Syndication REV,May (2025),Actual,"0.00"
+MAX 2,Syndication REV,May (2025),Budget,"0.00"
+MAX 2,Syndication REV,Jun (2025),Actual,"0.00"
+MAX 2,Syndication REV,Jun (2025),Budget,"0.00"
+MAX 2,Syndication REV,Jul (2025),Actual,"0.00"
+MAX 2,Syndication REV,Jul (2025),Budget,"0.00"
+MAX 2,Syndication REV,Aug (2025),Actual,"0.00"
+MAX 2,Syndication REV,Aug (2025),Budget,"0.00"
+MAX 2,Syndication REV,Sep (2025),Actual,"0.00"
+MAX 2,Syndication REV,Sep (2025),Budget,"0.00"
+MAX 2,Syndication REV,Oct (2025),Actual,"0.00"
+MAX 2,Syndication REV,Oct (2025),Budget,"0.00"
+MAX 2,Syndication REV,Nov (2025),Actual,"0.00"
+MAX 2,Syndication REV,Nov (2025),Budget,"0.00"
+MAX 2,Syndication REV,Dec (2025),Actual,"0.00"
+MAX 2,Syndication REV,Dec (2025),Budget,"0.00"
+MAX 2,Syndication REV,Jan (2026),Budget,"0.00"
+MAX 2,Syndication REV,Feb (2026),Budget,"0.00"
+MAX 2,Syndication REV,Mar (2026),Budget,"0.00"
+MAX 2,Linear Marketing,Apr (2025),Actual,"-0.70"
+MAX 2,Linear Marketing,Apr (2025),Budget,"-0.64"
+MAX 2,Linear Marketing,May (2025),Actual,"-0.60"
+MAX 2,Linear Marketing,May (2025),Budget,"-0.65"
+MAX 2,Linear Marketing,Jun (2025),Actual,"-0.70"
+MAX 2,Linear Marketing,Jun (2025),Budget,"-0.67"
+MAX 2,Linear Marketing,Jul (2025),Actual,"-0.70"
+MAX 2,Linear Marketing,Jul (2025),Budget,"-0.69"
+MAX 2,Linear Marketing,Aug (2025),Actual,"-0.70"
+MAX 2,Linear Marketing,Aug (2025),Budget,"-0.71"
+MAX 2,Linear Marketing,Sep (2025),Actual,"-0.70"
+MAX 2,Linear Marketing,Sep (2025),Budget,"-0.67"
+MAX 2,Linear Marketing,Oct (2025),Actual,"-0.70"
+MAX 2,Linear Marketing,Oct (2025),Budget,"-0.69"
+MAX 2,Linear Marketing,Nov (2025),Actual,"-0.70"
+MAX 2,Linear Marketing,Nov (2025),Budget,"-0.69"
+MAX 2,Linear Marketing,Dec (2025),Actual,"-0.80"
+MAX 2,Linear Marketing,Dec (2025),Budget,"-0.71"
+MAX 2,Linear Marketing,Jan (2026),Budget,"-0.71"
+MAX 2,Linear Marketing,Feb (2026),Budget,"-0.63"
+MAX 2,Linear Marketing,Mar (2026),Budget,"-0.67"
+MAX 2,Programming COST,Apr (2025),Actual,"-1.30"
+MAX 2,Programming COST,Apr (2025),Budget,"-1.33"
+MAX 2,Programming COST,May (2025),Actual,"-1.40"
+MAX 2,Programming COST,May (2025),Budget,"-1.33"
+MAX 2,Programming COST,Jun (2025),Actual,"-1.20"
+MAX 2,Programming COST,Jun (2025),Budget,"-1.33"
+MAX 2,Programming COST,Jul (2025),Actual,"-1.20"
+MAX 2,Programming COST,Jul (2025),Budget,"-1.33"
+MAX 2,Programming COST,Aug (2025),Actual,"-1.40"
+MAX 2,Programming COST,Aug (2025),Budget,"-1.33"
+MAX 2,Programming COST,Sep (2025),Actual,"-1.30"
+MAX 2,Programming COST,Sep (2025),Budget,"-1.33"
+MAX 2,Programming COST,Oct (2025),Actual,"-1.40"
+MAX 2,Programming COST,Oct (2025),Budget,"-1.33"
+MAX 2,Programming COST,Nov (2025),Actual,"-1.30"
+MAX 2,Programming COST,Nov (2025),Budget,"-1.33"
+MAX 2,Programming COST,Dec (2025),Actual,"-1.40"
+MAX 2,Programming COST,Dec (2025),Budget,"-1.33"
+MAX 2,Programming COST,Jan (2026),Budget,"-1.33"
+MAX 2,Programming COST,Feb (2026),Budget,"-1.33"
+MAX 2,Programming COST,Mar (2026),Budget,"-1.33"
+Motion Pictures,Syndication REV,Apr (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Apr (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,May (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,May (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Jun (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Jun (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Jul (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Jul (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Aug (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Aug (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Sep (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Sep (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Oct (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Oct (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Nov (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Nov (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Dec (2025),Actual,"0.00"
+Motion Pictures,Syndication REV,Dec (2025),Budget,"0.00"
+Motion Pictures,Syndication REV,Jan (2026),Budget,"0.00"
+Motion Pictures,Syndication REV,Feb (2026),Budget,"0.00"
+Motion Pictures,Syndication REV,Mar (2026),Budget,"0.00"
+PAL,Ad Agency Incentives,Apr (2025),Actual,"-7.30"
+PAL,Ad Agency Incentives,Apr (2025),Budget,"-7.98"
+PAL,Ad Agency Incentives,May (2025),Actual,"-8.40"
+PAL,Ad Agency Incentives,May (2025),Budget,"-8.42"
+PAL,Ad Agency Incentives,Jun (2025),Actual,"-9.00"
+PAL,Ad Agency Incentives,Jun (2025),Budget,"-8.71"
+PAL,Ad Agency Incentives,Jul (2025),Actual,"-8.50"
+PAL,Ad Agency Incentives,Jul (2025),Budget,"-9.00"
+PAL,Ad Agency Incentives,Aug (2025),Actual,"-8.70"
+PAL,Ad Agency Incentives,Aug (2025),Budget,"-9.00"
+PAL,Ad Agency Incentives,Sep (2025),Actual,"-9.20"
+PAL,Ad Agency Incentives,Sep (2025),Budget,"-9.00"
+PAL,Ad Agency Incentives,Oct (2025),Actual,"-8.60"
+PAL,Ad Agency Incentives,Oct (2025),Budget,"-9.29"
+PAL,Ad Agency Incentives,Nov (2025),Actual,"-9.40"
+PAL,Ad Agency Incentives,Nov (2025),Budget,"-9.29"
+PAL,Ad Agency Incentives,Dec (2025),Actual,"-8.80"
+PAL,Ad Agency Incentives,Dec (2025),Budget,"-9.29"
+PAL,Ad Agency Incentives,Jan (2026),Budget,"-9.58"
+PAL,Ad Agency Incentives,Feb (2026),Budget,"-9.58"
+PAL,Ad Agency Incentives,Mar (2026),Budget,"-9.58"
+PAL,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"140.60"
+PAL,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"128.50"
+PAL,Net Advertising REV BAU (Domestic),May (2025),Actual,"135.60"
+PAL,Net Advertising REV BAU (Domestic),May (2025),Budget,"135.51"
+PAL,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"126.60"
+PAL,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"140.19"
+PAL,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"144.10"
+PAL,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"144.86"
+PAL,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"150.80"
+PAL,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"144.86"
+PAL,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"157.70"
+PAL,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"144.86"
+PAL,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"149.90"
+PAL,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"149.53"
+PAL,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"139.50"
+PAL,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"149.53"
+PAL,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"144.90"
+PAL,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"149.53"
+PAL,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"154.21"
+PAL,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"154.21"
+PAL,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"154.21"
+PAL,Syndication REV,Apr (2025),Actual,"0.00"
+PAL,Syndication REV,Apr (2025),Budget,"0.00"
+PAL,Syndication REV,May (2025),Actual,"0.00"
+PAL,Syndication REV,May (2025),Budget,"0.00"
+PAL,Syndication REV,Jun (2025),Actual,"0.00"
+PAL,Syndication REV,Jun (2025),Budget,"0.00"
+PAL,Syndication REV,Jul (2025),Actual,"0.00"
+PAL,Syndication REV,Jul (2025),Budget,"0.00"
+PAL,Syndication REV,Aug (2025),Actual,"0.00"
+PAL,Syndication REV,Aug (2025),Budget,"0.00"
+PAL,Syndication REV,Sep (2025),Actual,"0.00"
+PAL,Syndication REV,Sep (2025),Budget,"0.00"
+PAL,Syndication REV,Oct (2025),Actual,"0.00"
+PAL,Syndication REV,Oct (2025),Budget,"0.00"
+PAL,Syndication REV,Nov (2025),Actual,"0.00"
+PAL,Syndication REV,Nov (2025),Budget,"0.00"
+PAL,Syndication REV,Dec (2025),Actual,"0.00"
+PAL,Syndication REV,Dec (2025),Budget,"0.00"
+PAL,Syndication REV,Jan (2026),Budget,"0.00"
+PAL,Syndication REV,Feb (2026),Budget,"0.00"
+PAL,Syndication REV,Mar (2026),Budget,"0.00"
+PAL,Linear Marketing,Apr (2025),Actual,"-1.30"
+PAL,Linear Marketing,Apr (2025),Budget,"-1.39"
+PAL,Linear Marketing,May (2025),Actual,"-1.40"
+PAL,Linear Marketing,May (2025),Budget,"-1.45"
+PAL,Linear Marketing,Jun (2025),Actual,"-1.60"
+PAL,Linear Marketing,Jun (2025),Budget,"-1.49"
+PAL,Linear Marketing,Jul (2025),Actual,"-1.60"
+PAL,Linear Marketing,Jul (2025),Budget,"-1.53"
+PAL,Linear Marketing,Aug (2025),Actual,"-1.40"
+PAL,Linear Marketing,Aug (2025),Budget,"-1.53"
+PAL,Linear Marketing,Sep (2025),Actual,"-1.50"
+PAL,Linear Marketing,Sep (2025),Budget,"-1.53"
+PAL,Linear Marketing,Oct (2025),Actual,"-1.70"
+PAL,Linear Marketing,Oct (2025),Budget,"-1.57"
+PAL,Linear Marketing,Nov (2025),Actual,"-1.70"
+PAL,Linear Marketing,Nov (2025),Budget,"-1.57"
+PAL,Linear Marketing,Dec (2025),Actual,"-1.50"
+PAL,Linear Marketing,Dec (2025),Budget,"-1.57"
+PAL,Linear Marketing,Jan (2026),Budget,"-1.62"
+PAL,Linear Marketing,Feb (2026),Budget,"-1.62"
+PAL,Linear Marketing,Mar (2026),Budget,"-1.62"
+PAL,Programming COST,Apr (2025),Actual,"-0.30"
+PAL,Programming COST,Apr (2025),Budget,"-0.29"
+PAL,Programming COST,May (2025),Actual,"-0.30"
+PAL,Programming COST,May (2025),Budget,"-0.29"
+PAL,Programming COST,Jun (2025),Actual,"-1.40"
+PAL,Programming COST,Jun (2025),Budget,"-1.42"
+PAL,Programming COST,Jul (2025),Actual,"-1.40"
+PAL,Programming COST,Jul (2025),Budget,"-1.42"
+PAL,Programming COST,Aug (2025),Actual,"-1.30"
+PAL,Programming COST,Aug (2025),Budget,"-1.42"
+PAL,Programming COST,Sep (2025),Actual,"-1.50"
+PAL,Programming COST,Sep (2025),Budget,"-1.42"
+PAL,Programming COST,Oct (2025),Actual,"-0.30"
+PAL,Programming COST,Oct (2025),Budget,"-0.29"
+PAL,Programming COST,Nov (2025),Actual,"-0.30"
+PAL,Programming COST,Nov (2025),Budget,"-0.29"
+PAL,Programming COST,Dec (2025),Actual,"-1.30"
+PAL,Programming COST,Dec (2025),Budget,"-1.42"
+PAL,Programming COST,Jan (2026),Budget,"-0.29"
+PAL,Programming COST,Feb (2026),Budget,"-0.29"
+PAL,Programming COST,Mar (2026),Budget,"-1.42"
+PIX,Ad Agency Incentives,Apr (2025),Actual,"0.00"
+PIX,Ad Agency Incentives,Apr (2025),Budget,"0.00"
+PIX,Ad Agency Incentives,May (2025),Actual,"0.00"
+PIX,Ad Agency Incentives,May (2025),Budget,"0.00"
+PIX,Ad Agency Incentives,Jun (2025),Actual,"-0.50"
+PIX,Ad Agency Incentives,Jun (2025),Budget,"-0.56"
+PIX,Ad Agency Incentives,Jul (2025),Actual,"0.00"
+PIX,Ad Agency Incentives,Jul (2025),Budget,"0.00"
+PIX,Ad Agency Incentives,Aug (2025),Actual,"0.00"
+PIX,Ad Agency Incentives,Aug (2025),Budget,"0.00"
+PIX,Ad Agency Incentives,Sep (2025),Actual,"-0.50"
+PIX,Ad Agency Incentives,Sep (2025),Budget,"-0.56"
+PIX,Ad Agency Incentives,Oct (2025),Actual,"0.00"
+PIX,Ad Agency Incentives,Oct (2025),Budget,"0.00"
+PIX,Ad Agency Incentives,Nov (2025),Actual,"0.00"
+PIX,Ad Agency Incentives,Nov (2025),Budget,"0.00"
+PIX,Ad Agency Incentives,Dec (2025),Actual,"-0.60"
+PIX,Ad Agency Incentives,Dec (2025),Budget,"-0.62"
+PIX,Ad Agency Incentives,Jan (2026),Budget,"0.00"
+PIX,Ad Agency Incentives,Feb (2026),Budget,"0.00"
+PIX,Ad Agency Incentives,Mar (2026),Budget,"-0.62"
+PIX,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),May (2025),Actual,"0.00"
+PIX,Net Advertising REV BAU (Domestic),May (2025),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"9.80"
+PIX,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"8.98"
+PIX,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"9.60"
+PIX,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"8.98"
+PIX,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"9.70"
+PIX,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"10.00"
+PIX,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"0.00"
+PIX,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"10.00"
+PIX,Syndication REV,Apr (2025),Actual,"0.00"
+PIX,Syndication REV,Apr (2025),Budget,"0.00"
+PIX,Syndication REV,May (2025),Actual,"0.00"
+PIX,Syndication REV,May (2025),Budget,"0.00"
+PIX,Syndication REV,Jun (2025),Actual,"0.00"
+PIX,Syndication REV,Jun (2025),Budget,"0.00"
+PIX,Syndication REV,Jul (2025),Actual,"0.00"
+PIX,Syndication REV,Jul (2025),Budget,"0.00"
+PIX,Syndication REV,Aug (2025),Actual,"0.00"
+PIX,Syndication REV,Aug (2025),Budget,"0.00"
+PIX,Syndication REV,Sep (2025),Actual,"0.00"
+PIX,Syndication REV,Sep (2025),Budget,"0.00"
+PIX,Syndication REV,Oct (2025),Actual,"0.00"
+PIX,Syndication REV,Oct (2025),Budget,"0.00"
+PIX,Syndication REV,Nov (2025),Actual,"0.00"
+PIX,Syndication REV,Nov (2025),Budget,"0.00"
+PIX,Syndication REV,Dec (2025),Actual,"0.00"
+PIX,Syndication REV,Dec (2025),Budget,"0.00"
+PIX,Syndication REV,Jan (2026),Budget,"0.00"
+PIX,Syndication REV,Feb (2026),Budget,"0.00"
+PIX,Syndication REV,Mar (2026),Budget,"0.00"
+PIX,Linear Marketing,Apr (2025),Actual,"0.00"
+PIX,Linear Marketing,Apr (2025),Budget,"0.00"
+PIX,Linear Marketing,May (2025),Actual,"0.00"
+PIX,Linear Marketing,May (2025),Budget,"0.00"
+PIX,Linear Marketing,Jun (2025),Actual,"-0.10"
+PIX,Linear Marketing,Jun (2025),Budget,"-0.08"
+PIX,Linear Marketing,Jul (2025),Actual,"0.00"
+PIX,Linear Marketing,Jul (2025),Budget,"0.00"
+PIX,Linear Marketing,Aug (2025),Actual,"0.00"
+PIX,Linear Marketing,Aug (2025),Budget,"0.00"
+PIX,Linear Marketing,Sep (2025),Actual,"-0.10"
+PIX,Linear Marketing,Sep (2025),Budget,"-0.08"
+PIX,Linear Marketing,Oct (2025),Actual,"0.00"
+PIX,Linear Marketing,Oct (2025),Budget,"0.00"
+PIX,Linear Marketing,Nov (2025),Actual,"0.00"
+PIX,Linear Marketing,Nov (2025),Budget,"0.00"
+PIX,Linear Marketing,Dec (2025),Actual,"-0.10"
+PIX,Linear Marketing,Dec (2025),Budget,"-0.09"
+PIX,Linear Marketing,Jan (2026),Budget,"0.00"
+PIX,Linear Marketing,Feb (2026),Budget,"0.00"
+PIX,Linear Marketing,Mar (2026),Budget,"-5.09"
+PIX,Programming COST,Apr (2025),Actual,"0.00"
+PIX,Programming COST,Apr (2025),Budget,"0.00"
+PIX,Programming COST,May (2025),Actual,"0.00"
+PIX,Programming COST,May (2025),Budget,"0.00"
+PIX,Programming COST,Jun (2025),Actual,"0.00"
+PIX,Programming COST,Jun (2025),Budget,"0.00"
+PIX,Programming COST,Jul (2025),Actual,"0.00"
+PIX,Programming COST,Jul (2025),Budget,"0.00"
+PIX,Programming COST,Aug (2025),Actual,"0.00"
+PIX,Programming COST,Aug (2025),Budget,"0.00"
+PIX,Programming COST,Sep (2025),Actual,"0.00"
+PIX,Programming COST,Sep (2025),Budget,"0.00"
+PIX,Programming COST,Oct (2025),Actual,"0.00"
+PIX,Programming COST,Oct (2025),Budget,"0.00"
+PIX,Programming COST,Nov (2025),Actual,"0.00"
+PIX,Programming COST,Nov (2025),Budget,"0.00"
+PIX,Programming COST,Dec (2025),Actual,"0.00"
+PIX,Programming COST,Dec (2025),Budget,"0.00"
+PIX,Programming COST,Jan (2026),Budget,"0.00"
+PIX,Programming COST,Feb (2026),Budget,"0.00"
+PIX,Programming COST,Mar (2026),Budget,"0.00"
+SAB,Ad Agency Incentives,Apr (2025),Actual,"-36.10"
+SAB,Ad Agency Incentives,Apr (2025),Budget,"-35.42"
+SAB,Ad Agency Incentives,May (2025),Actual,"-35.80"
+SAB,Ad Agency Incentives,May (2025),Budget,"-37.70"
+SAB,Ad Agency Incentives,Jun (2025),Actual,"-34.70"
+SAB,Ad Agency Incentives,Jun (2025),Budget,"-37.27"
+SAB,Ad Agency Incentives,Jul (2025),Actual,"-41.50"
+SAB,Ad Agency Incentives,Jul (2025),Budget,"-45.22"
+SAB,Ad Agency Incentives,Aug (2025),Actual,"-50.50"
+SAB,Ad Agency Incentives,Aug (2025),Budget,"-47.14"
+SAB,Ad Agency Incentives,Sep (2025),Actual,"-48.90"
+SAB,Ad Agency Incentives,Sep (2025),Budget,"-52.13"
+SAB,Ad Agency Incentives,Oct (2025),Actual,"-46.30"
+SAB,Ad Agency Incentives,Oct (2025),Budget,"-49.93"
+SAB,Ad Agency Incentives,Nov (2025),Actual,"-50.40"
+SAB,Ad Agency Incentives,Nov (2025),Budget,"-52.74"
+SAB,Ad Agency Incentives,Dec (2025),Actual,"-51.10"
+SAB,Ad Agency Incentives,Dec (2025),Budget,"-54.55"
+SAB,Ad Agency Incentives,Jan (2026),Budget,"-50.29"
+SAB,Ad Agency Incentives,Feb (2026),Budget,"-44.98"
+SAB,Ad Agency Incentives,Mar (2026),Budget,"-51.28"
+SAB,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"620.60"
+SAB,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"570.42"
+SAB,Net Advertising REV BAU (Domestic),May (2025),Actual,"580.20"
+SAB,Net Advertising REV BAU (Domestic),May (2025),Budget,"607.02"
+SAB,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"591.50"
+SAB,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"600.09"
+SAB,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"718.50"
+SAB,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"728.14"
+SAB,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"696.00"
+SAB,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"759.07"
+SAB,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"797.00"
+SAB,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"839.41"
+SAB,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"740.90"
+SAB,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"804.03"
+SAB,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"902.70"
+SAB,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"849.29"
+SAB,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"920.10"
+SAB,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"878.41"
+SAB,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"809.87"
+SAB,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"724.39"
+SAB,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"825.69"
+SAB,Syndication REV,Apr (2025),Actual,"15.20"
+SAB,Syndication REV,Apr (2025),Budget,"14.07"
+SAB,Syndication REV,May (2025),Actual,"10.70"
+SAB,Syndication REV,May (2025),Budget,"10.33"
+SAB,Syndication REV,Jun (2025),Actual,"13.00"
+SAB,Syndication REV,Jun (2025),Budget,"13.31"
+SAB,Syndication REV,Jul (2025),Actual,"12.90"
+SAB,Syndication REV,Jul (2025),Budget,"13.45"
+SAB,Syndication REV,Aug (2025),Actual,"10.50"
+SAB,Syndication REV,Aug (2025),Budget,"11.45"
+SAB,Syndication REV,Sep (2025),Actual,"16.30"
+SAB,Syndication REV,Sep (2025),Budget,"15.89"
+SAB,Syndication REV,Oct (2025),Actual,"14.10"
+SAB,Syndication REV,Oct (2025),Budget,"15.07"
+SAB,Syndication REV,Nov (2025),Actual,"11.20"
+SAB,Syndication REV,Nov (2025),Budget,"10.37"
+SAB,Syndication REV,Dec (2025),Actual,"10.70"
+SAB,Syndication REV,Dec (2025),Budget,"10.91"
+SAB,Syndication REV,Jan (2026),Budget,"15.16"
+SAB,Syndication REV,Feb (2026),Budget,"12.16"
+SAB,Syndication REV,Mar (2026),Budget,"12.24"
+SAB,Linear Marketing,Apr (2025),Actual,"-19.80"
+SAB,Linear Marketing,Apr (2025),Budget,"-19.13"
+SAB,Linear Marketing,May (2025),Actual,"-18.80"
+SAB,Linear Marketing,May (2025),Budget,"-19.46"
+SAB,Linear Marketing,Jun (2025),Actual,"-67.40"
+SAB,Linear Marketing,Jun (2025),Budget,"-66.40"
+SAB,Linear Marketing,Jul (2025),Actual,"-65.60"
+SAB,Linear Marketing,Jul (2025),Budget,"-69.05"
+SAB,Linear Marketing,Aug (2025),Actual,"-60.10"
+SAB,Linear Marketing,Aug (2025),Budget,"-60.83"
+SAB,Linear Marketing,Sep (2025),Actual,"-29.40"
+SAB,Linear Marketing,Sep (2025),Budget,"-27.55"
+SAB,Linear Marketing,Oct (2025),Actual,"-22.20"
+SAB,Linear Marketing,Oct (2025),Budget,"-23.73"
+SAB,Linear Marketing,Nov (2025),Actual,"-67.90"
+SAB,Linear Marketing,Nov (2025),Budget,"-62.14"
+SAB,Linear Marketing,Dec (2025),Actual,"-46.60"
+SAB,Linear Marketing,Dec (2025),Budget,"-43.40"
+SAB,Linear Marketing,Jan (2026),Budget,"-44.29"
+SAB,Linear Marketing,Feb (2026),Budget,"-21.52"
+SAB,Linear Marketing,Mar (2026),Budget,"-21.43"
+SAB,Programming COST,Apr (2025),Actual,"-327.90"
+SAB,Programming COST,Apr (2025),Budget,"-358.34"
+SAB,Programming COST,May (2025),Actual,"-398.30"
+SAB,Programming COST,May (2025),Budget,"-373.23"
+SAB,Programming COST,Jun (2025),Actual,"-322.90"
+SAB,Programming COST,Jun (2025),Budget,"-347.90"
+SAB,Programming COST,Jul (2025),Actual,"-387.80"
+SAB,Programming COST,Jul (2025),Budget,"-382.05"
+SAB,Programming COST,Aug (2025),Actual,"-418.30"
+SAB,Programming COST,Aug (2025),Budget,"-463.66"
+SAB,Programming COST,Sep (2025),Actual,"-452.50"
+SAB,Programming COST,Sep (2025),Budget,"-447.02"
+SAB,Programming COST,Oct (2025),Actual,"-399.40"
+SAB,Programming COST,Oct (2025),Budget,"-435.36"
+SAB,Programming COST,Nov (2025),Actual,"-355.50"
+SAB,Programming COST,Nov (2025),Budget,"-352.39"
+SAB,Programming COST,Dec (2025),Actual,"-358.40"
+SAB,Programming COST,Dec (2025),Budget,"-385.46"
+SAB,Programming COST,Jan (2026),Budget,"-395.28"
+SAB,Programming COST,Feb (2026),Budget,"-345.29"
+SAB,Programming COST,Mar (2026),Budget,"-374.01"
+SET,Ad Agency Incentives,Apr (2025),Actual,"-24.00"
+SET,Ad Agency Incentives,Apr (2025),Budget,"-23.05"
+SET,Ad Agency Incentives,May (2025),Actual,"-21.50"
+SET,Ad Agency Incentives,May (2025),Budget,"-21.93"
+SET,Ad Agency Incentives,Jun (2025),Actual,"-24.10"
+SET,Ad Agency Incentives,Jun (2025),Budget,"-22.36"
+SET,Ad Agency Incentives,Jul (2025),Actual,"-25.30"
+SET,Ad Agency Incentives,Jul (2025),Budget,"-27.77"
+SET,Ad Agency Incentives,Aug (2025),Actual,"-44.20"
+SET,Ad Agency Incentives,Aug (2025),Budget,"-44.82"
+SET,Ad Agency Incentives,Sep (2025),Actual,"-55.80"
+SET,Ad Agency Incentives,Sep (2025),Budget,"-56.21"
+SET,Ad Agency Incentives,Oct (2025),Actual,"-60.30"
+SET,Ad Agency Incentives,Oct (2025),Budget,"-58.63"
+SET,Ad Agency Incentives,Nov (2025),Actual,"-57.10"
+SET,Ad Agency Incentives,Nov (2025),Budget,"-54.15"
+SET,Ad Agency Incentives,Dec (2025),Actual,"-59.90"
+SET,Ad Agency Incentives,Dec (2025),Budget,"-55.33"
+SET,Ad Agency Incentives,Jan (2026),Budget,"-41.16"
+SET,Ad Agency Incentives,Feb (2026),Budget,"-35.41"
+SET,Ad Agency Incentives,Mar (2026),Budget,"-30.02"
+SET,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"400.60"
+SET,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"371.24"
+SET,Net Advertising REV BAU (Domestic),May (2025),Actual,"382.00"
+SET,Net Advertising REV BAU (Domestic),May (2025),Budget,"353.13"
+SET,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"393.70"
+SET,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"360.07"
+SET,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"438.10"
+SET,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"447.18"
+SET,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"792.00"
+SET,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"721.80"
+SET,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"896.20"
+SET,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"905.15"
+SET,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"934.10"
+SET,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"944.06"
+SET,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"900.80"
+SET,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"871.96"
+SET,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"882.50"
+SET,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"891.06"
+SET,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"662.81"
+SET,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"570.20"
+SET,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"483.48"
+SET,Syndication REV,Apr (2025),Actual,"27.00"
+SET,Syndication REV,Apr (2025),Budget,"27.16"
+SET,Syndication REV,May (2025),Actual,"34.40"
+SET,Syndication REV,May (2025),Budget,"32.36"
+SET,Syndication REV,Jun (2025),Actual,"28.70"
+SET,Syndication REV,Jun (2025),Budget,"31.21"
+SET,Syndication REV,Jul (2025),Actual,"29.60"
+SET,Syndication REV,Jul (2025),Budget,"32.00"
+SET,Syndication REV,Aug (2025),Actual,"33.20"
+SET,Syndication REV,Aug (2025),Budget,"32.85"
+SET,Syndication REV,Sep (2025),Actual,"40.80"
+SET,Syndication REV,Sep (2025),Budget,"38.04"
+SET,Syndication REV,Oct (2025),Actual,"41.10"
+SET,Syndication REV,Oct (2025),Budget,"38.12"
+SET,Syndication REV,Nov (2025),Actual,"35.60"
+SET,Syndication REV,Nov (2025),Budget,"36.74"
+SET,Syndication REV,Dec (2025),Actual,"33.80"
+SET,Syndication REV,Dec (2025),Budget,"33.43"
+SET,Syndication REV,Jan (2026),Budget,"29.38"
+SET,Syndication REV,Feb (2026),Budget,"46.80"
+SET,Syndication REV,Mar (2026),Budget,"42.88"
+SET,Linear Marketing,Apr (2025),Actual,"-94.40"
+SET,Linear Marketing,Apr (2025),Budget,"-95.58"
+SET,Linear Marketing,May (2025),Actual,"-101.30"
+SET,Linear Marketing,May (2025),Budget,"-100.91"
+SET,Linear Marketing,Jun (2025),Actual,"-70.90"
+SET,Linear Marketing,Jun (2025),Budget,"-70.98"
+SET,Linear Marketing,Jul (2025),Actual,"-62.50"
+SET,Linear Marketing,Jul (2025),Budget,"-64.31"
+SET,Linear Marketing,Aug (2025),Actual,"-139.80"
+SET,Linear Marketing,Aug (2025),Budget,"-129.78"
+SET,Linear Marketing,Sep (2025),Actual,"-97.60"
+SET,Linear Marketing,Sep (2025),Budget,"-91.43"
+SET,Linear Marketing,Oct (2025),Actual,"-81.70"
+SET,Linear Marketing,Oct (2025),Budget,"-86.78"
+SET,Linear Marketing,Nov (2025),Actual,"-75.00"
+SET,Linear Marketing,Nov (2025),Budget,"-81.13"
+SET,Linear Marketing,Dec (2025),Actual,"-111.70"
+SET,Linear Marketing,Dec (2025),Budget,"-111.30"
+SET,Linear Marketing,Jan (2026),Budget,"-96.75"
+SET,Linear Marketing,Feb (2026),Budget,"-70.42"
+SET,Linear Marketing,Mar (2026),Budget,"-69.64"
+SET,Programming COST,Apr (2025),Actual,"-456.60"
+SET,Programming COST,Apr (2025),Budget,"-416.07"
+SET,Programming COST,May (2025),Actual,"-292.80"
+SET,Programming COST,May (2025),Budget,"-303.69"
+SET,Programming COST,Jun (2025),Actual,"-296.80"
+SET,Programming COST,Jun (2025),Budget,"-295.74"
+SET,Programming COST,Jul (2025),Actual,"-292.90"
+SET,Programming COST,Jul (2025),Budget,"-299.61"
+SET,Programming COST,Aug (2025),Actual,"-533.70"
+SET,Programming COST,Aug (2025),Budget,"-537.02"
+SET,Programming COST,Sep (2025),Actual,"-732.20"
+SET,Programming COST,Sep (2025),Budget,"-680.93"
+SET,Programming COST,Oct (2025),Actual,"-728.40"
+SET,Programming COST,Oct (2025),Budget,"-723.04"
+SET,Programming COST,Nov (2025),Actual,"-747.00"
+SET,Programming COST,Nov (2025),Budget,"-690.81"
+SET,Programming COST,Dec (2025),Actual,"-695.20"
+SET,Programming COST,Dec (2025),Budget,"-707.26"
+SET,Programming COST,Jan (2026),Budget,"-470.17"
+SET,Programming COST,Feb (2026),Budget,"-400.95"
+SET,Programming COST,Mar (2026),Budget,"-297.39"
+SONY MARATHI,Ad Agency Incentives,Apr (2025),Actual,"-1.10"
+SONY MARATHI,Ad Agency Incentives,Apr (2025),Budget,"-1.26"
+SONY MARATHI,Ad Agency Incentives,May (2025),Actual,"-1.30"
+SONY MARATHI,Ad Agency Incentives,May (2025),Budget,"-1.26"
+SONY MARATHI,Ad Agency Incentives,Jun (2025),Actual,"-1.30"
+SONY MARATHI,Ad Agency Incentives,Jun (2025),Budget,"-1.32"
+SONY MARATHI,Ad Agency Incentives,Jul (2025),Actual,"-1.30"
+SONY MARATHI,Ad Agency Incentives,Jul (2025),Budget,"-1.32"
+SONY MARATHI,Ad Agency Incentives,Aug (2025),Actual,"-1.40"
+SONY MARATHI,Ad Agency Incentives,Aug (2025),Budget,"-1.32"
+SONY MARATHI,Ad Agency Incentives,Sep (2025),Actual,"-1.30"
+SONY MARATHI,Ad Agency Incentives,Sep (2025),Budget,"-1.32"
+SONY MARATHI,Ad Agency Incentives,Oct (2025),Actual,"-1.20"
+SONY MARATHI,Ad Agency Incentives,Oct (2025),Budget,"-1.26"
+SONY MARATHI,Ad Agency Incentives,Nov (2025),Actual,"-1.20"
+SONY MARATHI,Ad Agency Incentives,Nov (2025),Budget,"-1.32"
+SONY MARATHI,Ad Agency Incentives,Dec (2025),Actual,"-1.30"
+SONY MARATHI,Ad Agency Incentives,Dec (2025),Budget,"-1.32"
+SONY MARATHI,Ad Agency Incentives,Jan (2026),Budget,"-1.32"
+SONY MARATHI,Ad Agency Incentives,Feb (2026),Budget,"-1.26"
+SONY MARATHI,Ad Agency Incentives,Mar (2026),Budget,"-1.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"20.60"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"20.24"
+SONY MARATHI,Net Advertising REV BAU (Domestic),May (2025),Actual,"19.20"
+SONY MARATHI,Net Advertising REV BAU (Domestic),May (2025),Budget,"20.24"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"23.20"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"21.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"21.80"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"21.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"20.70"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"21.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"19.70"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"21.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"20.40"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"20.24"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"21.40"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"21.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"20.10"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"21.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"21.26"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"20.24"
+SONY MARATHI,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"20.24"
+SONY MARATHI,Syndication REV,Apr (2025),Actual,"0.00"
+SONY MARATHI,Syndication REV,Apr (2025),Budget,"0.00"
+SONY MARATHI,Syndication REV,May (2025),Actual,"0.80"
+SONY MARATHI,Syndication REV,May (2025),Budget,"0.75"
+SONY MARATHI,Syndication REV,Jun (2025),Actual,"1.50"
+SONY MARATHI,Syndication REV,Jun (2025),Budget,"1.49"
+SONY MARATHI,Syndication REV,Jul (2025),Actual,"0.80"
+SONY MARATHI,Syndication REV,Jul (2025),Budget,"0.75"
+SONY MARATHI,Syndication REV,Aug (2025),Actual,"1.40"
+SONY MARATHI,Syndication REV,Aug (2025),Budget,"1.25"
+SONY MARATHI,Syndication REV,Sep (2025),Actual,"1.60"
+SONY MARATHI,Syndication REV,Sep (2025),Budget,"1.50"
+SONY MARATHI,Syndication REV,Oct (2025),Actual,"1.80"
+SONY MARATHI,Syndication REV,Oct (2025),Budget,"2.00"
+SONY MARATHI,Syndication REV,Nov (2025),Actual,"1.60"
+SONY MARATHI,Syndication REV,Nov (2025),Budget,"1.50"
+SONY MARATHI,Syndication REV,Dec (2025),Actual,"2.10"
+SONY MARATHI,Syndication REV,Dec (2025),Budget,"2.24"
+SONY MARATHI,Syndication REV,Jan (2026),Budget,"1.25"
+SONY MARATHI,Syndication REV,Feb (2026),Budget,"1.25"
+SONY MARATHI,Syndication REV,Mar (2026),Budget,"1.25"
+SONY MARATHI,Linear Marketing,Apr (2025),Actual,"-9.60"
+SONY MARATHI,Linear Marketing,Apr (2025),Budget,"-10.33"
+SONY MARATHI,Linear Marketing,May (2025),Actual,"-2.90"
+SONY MARATHI,Linear Marketing,May (2025),Budget,"-2.81"
+SONY MARATHI,Linear Marketing,Jun (2025),Actual,"-6.50"
+SONY MARATHI,Linear Marketing,Jun (2025),Budget,"-6.97"
+SONY MARATHI,Linear Marketing,Jul (2025),Actual,"-7.70"
+SONY MARATHI,Linear Marketing,Jul (2025),Budget,"-7.32"
+SONY MARATHI,Linear Marketing,Aug (2025),Actual,"-6.50"
+SONY MARATHI,Linear Marketing,Aug (2025),Budget,"-6.74"
+SONY MARATHI,Linear Marketing,Sep (2025),Actual,"-3.30"
+SONY MARATHI,Linear Marketing,Sep (2025),Budget,"-3.32"
+SONY MARATHI,Linear Marketing,Oct (2025),Actual,"-10.90"
+SONY MARATHI,Linear Marketing,Oct (2025),Budget,"-11.16"
+SONY MARATHI,Linear Marketing,Nov (2025),Actual,"-3.50"
+SONY MARATHI,Linear Marketing,Nov (2025),Budget,"-3.32"
+SONY MARATHI,Linear Marketing,Dec (2025),Actual,"-6.50"
+SONY MARATHI,Linear Marketing,Dec (2025),Budget,"-6.34"
+SONY MARATHI,Linear Marketing,Jan (2026),Budget,"-9.47"
+SONY MARATHI,Linear Marketing,Feb (2026),Budget,"-2.81"
+SONY MARATHI,Linear Marketing,Mar (2026),Budget,"-2.81"
+SONY MARATHI,Programming COST,Apr (2025),Actual,"-44.10"
+SONY MARATHI,Programming COST,Apr (2025),Budget,"-41.84"
+SONY MARATHI,Programming COST,May (2025),Actual,"-38.30"
+SONY MARATHI,Programming COST,May (2025),Budget,"-40.81"
+SONY MARATHI,Programming COST,Jun (2025),Actual,"-44.80"
+SONY MARATHI,Programming COST,Jun (2025),Budget,"-41.63"
+SONY MARATHI,Programming COST,Jul (2025),Actual,"-42.90"
+SONY MARATHI,Programming COST,Jul (2025),Budget,"-41.73"
+SONY MARATHI,Programming COST,Aug (2025),Actual,"-35.10"
+SONY MARATHI,Programming COST,Aug (2025),Budget,"-38.48"
+SONY MARATHI,Programming COST,Sep (2025),Actual,"-42.60"
+SONY MARATHI,Programming COST,Sep (2025),Budget,"-43.43"
+SONY MARATHI,Programming COST,Oct (2025),Actual,"-35.10"
+SONY MARATHI,Programming COST,Oct (2025),Budget,"-34.47"
+SONY MARATHI,Programming COST,Nov (2025),Actual,"-32.60"
+SONY MARATHI,Programming COST,Nov (2025),Budget,"-31.82"
+SONY MARATHI,Programming COST,Dec (2025),Actual,"-36.80"
+SONY MARATHI,Programming COST,Dec (2025),Budget,"-40.09"
+SONY MARATHI,Programming COST,Jan (2026),Budget,"-34.64"
+SONY MARATHI,Programming COST,Feb (2026),Budget,"-31.25"
+SONY MARATHI,Programming COST,Mar (2026),Budget,"-34.97"
+Sports,Ad Agency Incentives,Apr (2025),Actual,"-0.90"
+Sports,Ad Agency Incentives,Apr (2025),Budget,"-0.79"
+Sports,Ad Agency Incentives,May (2025),Actual,"-2.10"
+Sports,Ad Agency Incentives,May (2025),Budget,"-2.19"
+Sports,Ad Agency Incentives,Jun (2025),Actual,"-10.20"
+Sports,Ad Agency Incentives,Jun (2025),Budget,"-11.27"
+Sports,Ad Agency Incentives,Jul (2025),Actual,"-27.60"
+Sports,Ad Agency Incentives,Jul (2025),Budget,"-27.37"
+Sports,Ad Agency Incentives,Aug (2025),Actual,"-11.20"
+Sports,Ad Agency Incentives,Aug (2025),Budget,"-10.67"
+Sports,Ad Agency Incentives,Sep (2025),Actual,"-138.70"
+Sports,Ad Agency Incentives,Sep (2025),Budget,"-136.45"
+Sports,Ad Agency Incentives,Oct (2025),Actual,"-0.80"
+Sports,Ad Agency Incentives,Oct (2025),Budget,"-0.86"
+Sports,Ad Agency Incentives,Nov (2025),Actual,"-0.80"
+Sports,Ad Agency Incentives,Nov (2025),Budget,"-0.86"
+Sports,Ad Agency Incentives,Dec (2025),Actual,"-0.80"
+Sports,Ad Agency Incentives,Dec (2025),Budget,"-0.79"
+Sports,Ad Agency Incentives,Jan (2026),Budget,"-2.10"
+Sports,Ad Agency Incentives,Feb (2026),Budget,"-2.10"
+Sports,Ad Agency Incentives,Mar (2026),Budget,"-0.72"
+Sports,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"13.90"
+Sports,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"12.79"
+Sports,Net Advertising REV BAU (Domestic),May (2025),Actual,"32.80"
+Sports,Net Advertising REV BAU (Domestic),May (2025),Budget,"35.29"
+Sports,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"194.40"
+Sports,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"181.55"
+Sports,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"452.70"
+Sports,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"440.76"
+Sports,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"167.30"
+Sports,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"171.77"
+Sports,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"1241.10"
+Sports,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"1137.79"
+Sports,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"13.20"
+Sports,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"13.89"
+Sports,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"13.50"
+Sports,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"13.89"
+Sports,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"12.70"
+Sports,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"12.79"
+Sports,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"33.89"
+Sports,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"33.89"
+Sports,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"11.59"
+Sports,Syndication REV,Apr (2025),Actual,"5.20"
+Sports,Syndication REV,Apr (2025),Budget,"5.02"
+Sports,Syndication REV,May (2025),Actual,"0.00"
+Sports,Syndication REV,May (2025),Budget,"0.00"
+Sports,Syndication REV,Jun (2025),Actual,"11.30"
+Sports,Syndication REV,Jun (2025),Budget,"12.51"
+Sports,Syndication REV,Jul (2025),Actual,"88.70"
+Sports,Syndication REV,Jul (2025),Budget,"86.44"
+Sports,Syndication REV,Aug (2025),Actual,"0.40"
+Sports,Syndication REV,Aug (2025),Budget,"0.37"
+Sports,Syndication REV,Sep (2025),Actual,"455.40"
+Sports,Syndication REV,Sep (2025),Budget,"490.00"
+Sports,Syndication REV,Oct (2025),Actual,"4.90"
+Sports,Syndication REV,Oct (2025),Budget,"4.90"
+Sports,Syndication REV,Nov (2025),Actual,"2.50"
+Sports,Syndication REV,Nov (2025),Budget,"2.72"
+Sports,Syndication REV,Dec (2025),Actual,"1.30"
+Sports,Syndication REV,Dec (2025),Budget,"1.34"
+Sports,Syndication REV,Jan (2026),Budget,"-4.65"
+Sports,Syndication REV,Feb (2026),Budget,"-4.65"
+Sports,Syndication REV,Mar (2026),Budget,"0.00"
+Sports,Linear Marketing,Apr (2025),Actual,"-3.20"
+Sports,Linear Marketing,Apr (2025),Budget,"-3.18"
+Sports,Linear Marketing,May (2025),Actual,"-48.70"
+Sports,Linear Marketing,May (2025),Budget,"-50.09"
+Sports,Linear Marketing,Jun (2025),Actual,"-134.40"
+Sports,Linear Marketing,Jun (2025),Budget,"-128.70"
+Sports,Linear Marketing,Jul (2025),Actual,"-10.90"
+Sports,Linear Marketing,Jul (2025),Budget,"-12.04"
+Sports,Linear Marketing,Aug (2025),Actual,"-16.30"
+Sports,Linear Marketing,Aug (2025),Budget,"-17.61"
+Sports,Linear Marketing,Sep (2025),Actual,"-83.90"
+Sports,Linear Marketing,Sep (2025),Budget,"-85.31"
+Sports,Linear Marketing,Oct (2025),Actual,"-8.20"
+Sports,Linear Marketing,Oct (2025),Budget,"-8.19"
+Sports,Linear Marketing,Nov (2025),Actual,"-14.40"
+Sports,Linear Marketing,Nov (2025),Budget,"-13.19"
+Sports,Linear Marketing,Dec (2025),Actual,"-4.10"
+Sports,Linear Marketing,Dec (2025),Budget,"-4.18"
+Sports,Linear Marketing,Jan (2026),Budget,"-8.87"
+Sports,Linear Marketing,Feb (2026),Budget,"-15.37"
+Sports,Linear Marketing,Mar (2026),Budget,"-9.67"
+Sports,Programming COST,Apr (2025),Actual,"-27.80"
+Sports,Programming COST,Apr (2025),Budget,"-30.89"
+Sports,Programming COST,May (2025),Actual,"-46.70"
+Sports,Programming COST,May (2025),Budget,"-45.89"
+Sports,Programming COST,Jun (2025),Actual,"-100.10"
+Sports,Programming COST,Jun (2025),Budget,"-96.35"
+Sports,Programming COST,Jul (2025),Actual,"-192.00"
+Sports,Programming COST,Jul (2025),Budget,"-190.23"
+Sports,Programming COST,Aug (2025),Actual,"-90.00"
+Sports,Programming COST,Aug (2025),Budget,"-97.48"
+Sports,Programming COST,Sep (2025),Actual,"-206.80"
+Sports,Programming COST,Sep (2025),Budget,"-228.36"
+Sports,Programming COST,Oct (2025),Actual,"-26.90"
+Sports,Programming COST,Oct (2025),Budget,"-27.28"
+Sports,Programming COST,Nov (2025),Actual,"-29.70"
+Sports,Programming COST,Nov (2025),Budget,"-27.28"
+Sports,Programming COST,Dec (2025),Actual,"-32.30"
+Sports,Programming COST,Dec (2025),Budget,"-32.28"
+Sports,Programming COST,Jan (2026),Budget,"-57.89"
+Sports,Programming COST,Feb (2026),Budget,"-27.89"
+Sports,Programming COST,Mar (2026),Budget,"-27.89"
+STUDIO NEXT,Programming COST,Apr (2025),Actual,"8.20"
+STUDIO NEXT,Programming COST,Apr (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,May (2025),Actual,"7.90"
+STUDIO NEXT,Programming COST,May (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Jun (2025),Actual,"9.10"
+STUDIO NEXT,Programming COST,Jun (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Jul (2025),Actual,"8.60"
+STUDIO NEXT,Programming COST,Jul (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Aug (2025),Actual,"8.00"
+STUDIO NEXT,Programming COST,Aug (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Sep (2025),Actual,"8.10"
+STUDIO NEXT,Programming COST,Sep (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Oct (2025),Actual,"9.10"
+STUDIO NEXT,Programming COST,Oct (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Nov (2025),Actual,"8.00"
+STUDIO NEXT,Programming COST,Nov (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Dec (2025),Actual,"9.60"
+STUDIO NEXT,Programming COST,Dec (2025),Budget,"8.70"
+STUDIO NEXT,Programming COST,Jan (2026),Budget,"8.70"
+STUDIO NEXT,Programming COST,Feb (2026),Budget,"8.70"
+STUDIO NEXT,Programming COST,Mar (2026),Budget,"8.70"
+WAH,Ad Agency Incentives,Apr (2025),Actual,"-5.20"
+WAH,Ad Agency Incentives,Apr (2025),Budget,"-4.88"
+WAH,Ad Agency Incentives,May (2025),Actual,"-4.50"
+WAH,Ad Agency Incentives,May (2025),Budget,"-4.88"
+WAH,Ad Agency Incentives,Jun (2025),Actual,"-4.90"
+WAH,Ad Agency Incentives,Jun (2025),Budget,"-5.28"
+WAH,Ad Agency Incentives,Jul (2025),Actual,"-5.40"
+WAH,Ad Agency Incentives,Jul (2025),Budget,"-5.28"
+WAH,Ad Agency Incentives,Aug (2025),Actual,"-5.10"
+WAH,Ad Agency Incentives,Aug (2025),Budget,"-5.54"
+WAH,Ad Agency Incentives,Sep (2025),Actual,"-4.80"
+WAH,Ad Agency Incentives,Sep (2025),Budget,"-5.28"
+WAH,Ad Agency Incentives,Oct (2025),Actual,"-6.00"
+WAH,Ad Agency Incentives,Oct (2025),Budget,"-5.54"
+WAH,Ad Agency Incentives,Nov (2025),Actual,"-5.50"
+WAH,Ad Agency Incentives,Nov (2025),Budget,"-5.54"
+WAH,Ad Agency Incentives,Dec (2025),Actual,"-5.40"
+WAH,Ad Agency Incentives,Dec (2025),Budget,"-5.41"
+WAH,Ad Agency Incentives,Jan (2026),Budget,"-5.41"
+WAH,Ad Agency Incentives,Feb (2026),Budget,"-5.15"
+WAH,Ad Agency Incentives,Mar (2026),Budget,"-5.15"
+WAH,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"72.20"
+WAH,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"78.63"
+WAH,Net Advertising REV BAU (Domestic),May (2025),Actual,"78.50"
+WAH,Net Advertising REV BAU (Domestic),May (2025),Budget,"78.63"
+WAH,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"81.50"
+WAH,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"85.00"
+WAH,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"77.30"
+WAH,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"85.00"
+WAH,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"94.80"
+WAH,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"89.25"
+WAH,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"86.80"
+WAH,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"85.00"
+WAH,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"85.10"
+WAH,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"89.25"
+WAH,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"96.00"
+WAH,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"89.25"
+WAH,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"80.90"
+WAH,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"87.13"
+WAH,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"87.13"
+WAH,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"82.88"
+WAH,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"82.88"
+WAH,Syndication REV,Apr (2025),Actual,"0.00"
+WAH,Syndication REV,Apr (2025),Budget,"0.00"
+WAH,Syndication REV,May (2025),Actual,"0.00"
+WAH,Syndication REV,May (2025),Budget,"0.00"
+WAH,Syndication REV,Jun (2025),Actual,"0.00"
+WAH,Syndication REV,Jun (2025),Budget,"0.00"
+WAH,Syndication REV,Jul (2025),Actual,"0.00"
+WAH,Syndication REV,Jul (2025),Budget,"0.00"
+WAH,Syndication REV,Aug (2025),Actual,"0.00"
+WAH,Syndication REV,Aug (2025),Budget,"0.00"
+WAH,Syndication REV,Sep (2025),Actual,"0.00"
+WAH,Syndication REV,Sep (2025),Budget,"0.00"
+WAH,Syndication REV,Oct (2025),Actual,"0.00"
+WAH,Syndication REV,Oct (2025),Budget,"0.00"
+WAH,Syndication REV,Nov (2025),Actual,"0.00"
+WAH,Syndication REV,Nov (2025),Budget,"0.00"
+WAH,Syndication REV,Dec (2025),Actual,"0.00"
+WAH,Syndication REV,Dec (2025),Budget,"0.00"
+WAH,Syndication REV,Jan (2026),Budget,"0.00"
+WAH,Syndication REV,Feb (2026),Budget,"0.00"
+WAH,Syndication REV,Mar (2026),Budget,"0.00"
+WAH,Linear Marketing,Apr (2025),Actual,"-2.30"
+WAH,Linear Marketing,Apr (2025),Budget,"-2.49"
+WAH,Linear Marketing,May (2025),Actual,"-1.30"
+WAH,Linear Marketing,May (2025),Budget,"-1.19"
+WAH,Linear Marketing,Jun (2025),Actual,"-1.00"
+WAH,Linear Marketing,Jun (2025),Budget,"-1.09"
+WAH,Linear Marketing,Jul (2025),Actual,"-1.10"
+WAH,Linear Marketing,Jul (2025),Budget,"-1.19"
+WAH,Linear Marketing,Aug (2025),Actual,"-1.10"
+WAH,Linear Marketing,Aug (2025),Budget,"-1.13"
+WAH,Linear Marketing,Sep (2025),Actual,"-1.00"
+WAH,Linear Marketing,Sep (2025),Budget,"-1.09"
+WAH,Linear Marketing,Oct (2025),Actual,"-2.80"
+WAH,Linear Marketing,Oct (2025),Budget,"-2.73"
+WAH,Linear Marketing,Nov (2025),Actual,"-1.20"
+WAH,Linear Marketing,Nov (2025),Budget,"-1.23"
+WAH,Linear Marketing,Dec (2025),Actual,"-1.00"
+WAH,Linear Marketing,Dec (2025),Budget,"-1.11"
+WAH,Linear Marketing,Jan (2026),Budget,"-1.11"
+WAH,Linear Marketing,Feb (2026),Budget,"-1.07"
+WAH,Linear Marketing,Mar (2026),Budget,"-1.17"
+WAH,Programming COST,Apr (2025),Actual,"-0.70"
+WAH,Programming COST,Apr (2025),Budget,"-0.67"
+WAH,Programming COST,May (2025),Actual,"-0.70"
+WAH,Programming COST,May (2025),Budget,"-0.67"
+WAH,Programming COST,Jun (2025),Actual,"-0.70"
+WAH,Programming COST,Jun (2025),Budget,"-0.67"
+WAH,Programming COST,Jul (2025),Actual,"-0.70"
+WAH,Programming COST,Jul (2025),Budget,"-0.67"
+WAH,Programming COST,Aug (2025),Actual,"-0.70"
+WAH,Programming COST,Aug (2025),Budget,"-0.67"
+WAH,Programming COST,Sep (2025),Actual,"-0.70"
+WAH,Programming COST,Sep (2025),Budget,"-0.67"
+WAH,Programming COST,Oct (2025),Actual,"-0.60"
+WAH,Programming COST,Oct (2025),Budget,"-0.67"
+WAH,Programming COST,Nov (2025),Actual,"-0.70"
+WAH,Programming COST,Nov (2025),Budget,"-0.67"
+WAH,Programming COST,Dec (2025),Actual,"-0.70"
+WAH,Programming COST,Dec (2025),Budget,"-0.67"
+WAH,Programming COST,Jan (2026),Budget,"-0.67"
+WAH,Programming COST,Feb (2026),Budget,"-0.67"
+WAH,Programming COST,Mar (2026),Budget,"-0.67"
+YAY,Ad Agency Incentives,Apr (2025),Actual,"-1.40"
+YAY,Ad Agency Incentives,Apr (2025),Budget,"-1.48"
+YAY,Ad Agency Incentives,May (2025),Actual,"-1.50"
+YAY,Ad Agency Incentives,May (2025),Budget,"-1.52"
+YAY,Ad Agency Incentives,Jun (2025),Actual,"-1.50"
+YAY,Ad Agency Incentives,Jun (2025),Budget,"-1.45"
+YAY,Ad Agency Incentives,Jul (2025),Actual,"-1.40"
+YAY,Ad Agency Incentives,Jul (2025),Budget,"-1.36"
+YAY,Ad Agency Incentives,Aug (2025),Actual,"-1.40"
+YAY,Ad Agency Incentives,Aug (2025),Budget,"-1.34"
+YAY,Ad Agency Incentives,Sep (2025),Actual,"-1.60"
+YAY,Ad Agency Incentives,Sep (2025),Budget,"-1.43"
+YAY,Ad Agency Incentives,Oct (2025),Actual,"-1.40"
+YAY,Ad Agency Incentives,Oct (2025),Budget,"-1.38"
+YAY,Ad Agency Incentives,Nov (2025),Actual,"-1.40"
+YAY,Ad Agency Incentives,Nov (2025),Budget,"-1.43"
+YAY,Ad Agency Incentives,Dec (2025),Actual,"-1.50"
+YAY,Ad Agency Incentives,Dec (2025),Budget,"-1.36"
+YAY,Ad Agency Incentives,Jan (2026),Budget,"-1.29"
+YAY,Ad Agency Incentives,Feb (2026),Budget,"-1.36"
+YAY,Ad Agency Incentives,Mar (2026),Budget,"-1.36"
+YAY,Net Advertising REV BAU (Domestic),Apr (2025),Actual,"22.30"
+YAY,Net Advertising REV BAU (Domestic),Apr (2025),Budget,"23.79"
+YAY,Net Advertising REV BAU (Domestic),May (2025),Actual,"26.90"
+YAY,Net Advertising REV BAU (Domestic),May (2025),Budget,"24.55"
+YAY,Net Advertising REV BAU (Domestic),Jun (2025),Actual,"22.90"
+YAY,Net Advertising REV BAU (Domestic),Jun (2025),Budget,"23.41"
+YAY,Net Advertising REV BAU (Domestic),Jul (2025),Actual,"21.40"
+YAY,Net Advertising REV BAU (Domestic),Jul (2025),Budget,"21.90"
+YAY,Net Advertising REV BAU (Domestic),Aug (2025),Actual,"23.40"
+YAY,Net Advertising REV BAU (Domestic),Aug (2025),Budget,"21.52"
+YAY,Net Advertising REV BAU (Domestic),Sep (2025),Actual,"21.80"
+YAY,Net Advertising REV BAU (Domestic),Sep (2025),Budget,"23.03"
+YAY,Net Advertising REV BAU (Domestic),Oct (2025),Actual,"21.70"
+YAY,Net Advertising REV BAU (Domestic),Oct (2025),Budget,"22.28"
+YAY,Net Advertising REV BAU (Domestic),Nov (2025),Actual,"22.50"
+YAY,Net Advertising REV BAU (Domestic),Nov (2025),Budget,"23.03"
+YAY,Net Advertising REV BAU (Domestic),Dec (2025),Actual,"20.50"
+YAY,Net Advertising REV BAU (Domestic),Dec (2025),Budget,"21.90"
+YAY,Net Advertising REV BAU (Domestic),Jan (2026),Budget,"20.77"
+YAY,Net Advertising REV BAU (Domestic),Feb (2026),Budget,"21.90"
+YAY,Net Advertising REV BAU (Domestic),Mar (2026),Budget,"21.90"
+YAY,Syndication REV,Apr (2025),Actual,"1.00"
+YAY,Syndication REV,Apr (2025),Budget,"1.00"
+YAY,Syndication REV,May (2025),Actual,"0.00"
+YAY,Syndication REV,May (2025),Budget,"0.00"
+YAY,Syndication REV,Jun (2025),Actual,"0.50"
+YAY,Syndication REV,Jun (2025),Budget,"0.50"
+YAY,Syndication REV,Jul (2025),Actual,"0.50"
+YAY,Syndication REV,Jul (2025),Budget,"0.50"
+YAY,Syndication REV,Aug (2025),Actual,"1.00"
+YAY,Syndication REV,Aug (2025),Budget,"1.00"
+YAY,Syndication REV,Sep (2025),Actual,"2.00"
+YAY,Syndication REV,Sep (2025),Budget,"2.00"
+YAY,Syndication REV,Oct (2025),Actual,"1.10"
+YAY,Syndication REV,Oct (2025),Budget,"1.00"
+YAY,Syndication REV,Nov (2025),Actual,"0.90"
+YAY,Syndication REV,Nov (2025),Budget,"1.00"
+YAY,Syndication REV,Dec (2025),Actual,"1.10"
+YAY,Syndication REV,Dec (2025),Budget,"1.00"
+YAY,Syndication REV,Jan (2026),Budget,"1.89"
+YAY,Syndication REV,Feb (2026),Budget,"1.00"
+YAY,Syndication REV,Mar (2026),Budget,"2.00"
+YAY,Linear Marketing,Apr (2025),Actual,"-9.90"
+YAY,Linear Marketing,Apr (2025),Budget,"-9.12"
+YAY,Linear Marketing,May (2025),Actual,"-29.20"
+YAY,Linear Marketing,May (2025),Budget,"-26.77"
+YAY,Linear Marketing,Jun (2025),Actual,"-15.00"
+YAY,Linear Marketing,Jun (2025),Budget,"-16.58"
+YAY,Linear Marketing,Jul (2025),Actual,"-6.80"
+YAY,Linear Marketing,Jul (2025),Budget,"-7.47"
+YAY,Linear Marketing,Aug (2025),Actual,"-7.40"
+YAY,Linear Marketing,Aug (2025),Budget,"-7.01"
+YAY,Linear Marketing,Sep (2025),Actual,"-4.70"
+YAY,Linear Marketing,Sep (2025),Budget,"-5.20"
+YAY,Linear Marketing,Oct (2025),Actual,"-8.60"
+YAY,Linear Marketing,Oct (2025),Budget,"-8.84"
+YAY,Linear Marketing,Nov (2025),Actual,"-18.90"
+YAY,Linear Marketing,Nov (2025),Budget,"-20.67"
+YAY,Linear Marketing,Dec (2025),Actual,"-20.40"
+YAY,Linear Marketing,Dec (2025),Budget,"-21.11"
+YAY,Linear Marketing,Jan (2026),Budget,"-6.78"
+YAY,Linear Marketing,Feb (2026),Budget,"-6.79"
+YAY,Linear Marketing,Mar (2026),Budget,"-6.10"
+YAY,Programming COST,Apr (2025),Actual,"-85.80"
+YAY,Programming COST,Apr (2025),Budget,"-82.41"
+YAY,Programming COST,May (2025),Actual,"-63.20"
+YAY,Programming COST,May (2025),Budget,"-69.93"
+YAY,Programming COST,Jun (2025),Actual,"-65.40"
+YAY,Programming COST,Jun (2025),Budget,"-67.33"
+YAY,Programming COST,Jul (2025),Actual,"-64.50"
+YAY,Programming COST,Jul (2025),Budget,"-65.97"
+YAY,Programming COST,Aug (2025),Actual,"-64.70"
+YAY,Programming COST,Aug (2025),Budget,"-61.70"
+YAY,Programming COST,Sep (2025),Actual,"-72.30"
+YAY,Programming COST,Sep (2025),Budget,"-70.59"
+YAY,Programming COST,Oct (2025),Actual,"-56.60"
+YAY,Programming COST,Oct (2025),Budget,"-59.11"
+YAY,Programming COST,Nov (2025),Actual,"-54.70"
+YAY,Programming COST,Nov (2025),Budget,"-56.53"
+YAY,Programming COST,Dec (2025),Actual,"-51.20"
+YAY,Programming COST,Dec (2025),Budget,"-56.00"
+YAY,Programming COST,Jan (2026),Budget,"-54.98"
+YAY,Programming COST,Feb (2026),Budget,"-51.19"
+YAY,Programming COST,Mar (2026),Budget,"-52.03"
 `
 ].join('\n');
 
