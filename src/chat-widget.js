@@ -2503,7 +2503,7 @@ YAY,Programming COST,Mar (2026),Budget,"-52.03"
 
         }
 
-        else if( this._props.systemPromptType === 'FUTUROOT' ){
+        else if( this._props.systemPrompt === 'FUTUROOT' ){
 
           this.system = [
             `You are PerciBOT for Process Mining (Procure-to-Pay).
