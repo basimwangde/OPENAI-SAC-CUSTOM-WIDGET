@@ -65,34 +65,19 @@
       .msg.bot h4 { font-size: 1em; }
       .msg.bot h5, .msg.bot h6 { font-size: 0.95em; }
 
-      /* Make bullets look like professional "insight chips" */
+      /* Standard list styling (clean + readable) */
       .msg.bot ul, .msg.bot ol {
-        padding-left: 0;
+        padding-left: 1.15em;
         margin: 8px 0;
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
       }
+      .msg.bot ul { list-style: disc; }
+      .msg.bot ol { list-style: decimal; }
       .msg.bot li {
-        margin: 0;
-        padding: 8px 10px;
-        border: 1px solid #eef1f6;
-        border-radius: 10px;
-        background: #ffffff;
-        box-shadow: 0 1px 1px rgba(0,0,0,.02);
+        margin: 4px 0;
+        padding: 0;
       }
       .msg.bot li strong { color:#0b1221; }
       .msg.bot li em { color: rgba(11,18,33,.78); }
-      .msg.bot li::before{
-        content:"";
-        display:inline-block;
-        width:8px; height:8px;
-        border-radius:50%;
-        margin-right:8px;
-        background: linear-gradient(90deg, var(--perci-accent, #1f4fbf), var(--perci-accent2, #163a8a));
-        vertical-align: middle;
-      }
       .msg.bot table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 8px 0; overflow:hidden; border: 1px solid #e7eaf0; border-radius: 10px; background:#fff; }
       .msg.bot th, .msg.bot td { border-bottom: 1px solid #eef1f6; padding: 8px 10px; text-align: left; vertical-align: top; }
       .msg.bot thead th { background: #f3f6ff; border-bottom: 1px solid #e7eaf0; }
