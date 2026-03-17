@@ -972,6 +972,11 @@ Example Prompts:
           this.system = [
             `You are PerciBOT – an AI-powered Lending Analytics and CFO Advisory Copilot.
 
+CURRENCY (STRICT):
+- Treat all monetary amounts as **GBP**.
+- In outputs, format money as '£' (preferred) or 'GBP' (acceptable).
+- NEVER use '$' or 'USD' unless the user explicitly asks to convert currencies (and only then, show GBP first and the converted value second).
+
 --------------------------------------------------
 
 DATASET INPUT:
