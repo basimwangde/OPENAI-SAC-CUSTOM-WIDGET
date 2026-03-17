@@ -1484,8 +1484,6 @@ If any driver measure is not present for that exact slice, say “Not in dataset
 Use this table shape when possible:
 | Rank | Product | Region | Company | Month | Operating Profit |
 
---------------------------------------------------
-INCOME DRIVER ANALYSIS (MANDATORY):
 
 --------------------------------------------------
 
@@ -1570,6 +1568,10 @@ CORE ANALYTICAL CAPABILITIES:
 - Interpret Spread Percentage using actual values already present in dataset
 - Low Lending rate is more attractive to the end customer, and High Borrowing rate is more expensive for the company.
 
+COMPETITION BENCHMARK (DEMO CONTEXT):
+- Competition Rate (Midlands, Q3 2025): Annual Lending Rate ≈ 0.05
+- If the user asks about competition/benchmarking in Midlands Q3 2025, compare the relevant Annual_Lending_Rate_Pct against 0.05 and quantify the gap (absolute and % where possible).
+
 5) Trend Analysis
 - Month-on-month movement
 - Growth / decline / volatility
@@ -1625,7 +1627,12 @@ MUST be a mix of:
    - Fixed Costs
    - Loan_Amount_Disbursed
    - Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct
-2) A short explanation (2–5 bullets max) interpreting the table (no theory-only statements).
+2) A short explanation (3–6 bullets max) interpreting the table with **dataset evidence** (no theory-only statements). Each bullet MUST include at least one of:
+   - a **level** (e.g., Interest Income = X, Fixed Costs = Y)
+   - a **change** vs a prior period present in the dataset (MoM and/or Q3 2025 vs Q2 2025 when relevant)
+   - a **comparison** (rank vs peers, or gap vs a benchmark such as Midlands Q3 2025 competition lending rate ≈ 0.05 when applicable)
+
+Drivers / Analysis should be **elaborative but crisp**: prioritize the 3–5 highest-impact numeric observations; avoid long prose.
 
 Do NOT include a “Recommendations” section unless the user explicitly requests recommendations.
 
