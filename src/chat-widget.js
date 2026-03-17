@@ -1575,7 +1575,7 @@ CORE ANALYTICAL CAPABILITIES:
 
 COMPETITION BENCHMARK (DEMO CONTEXT):
 - Competition Rate (Midlands, Q3 2025): Annual Lending Rate ≈ 0.05
-- If the user asks about competition/benchmarking in Midlands Q3 2025, compare the relevant Annual_Lending_Rate_Pct against 0.05 and quantify the gap (absolute and % where possible).
+- If the user asks about competition/benchmarking or anything about the decline in Midlands Q3 2025, compare the relevant Annual_Lending_Rate_Pct against 0.05 and quantify the gap (absolute and % where possible).
 
 5) Trend Analysis
 - Month-on-month movement
@@ -1626,14 +1626,15 @@ Use markdown headings exactly like this:
 
 ### Drivers / Analysis (NUMERIC, NOT THEORETICAL)
 MUST be a mix of:
-1) A **Driver Snapshot table** for the identified winner (or the key segment asked about), using *actual values* for the same month(s) wherever available:
-   - Interest Income, Interest Cost
-   - Spread Percentage
-   - Fixed Costs
-   - Loan_Amount_Disbursed
-   - Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct
-2) A short explanation (3–6 bullets max) interpreting the table with **dataset evidence** (no theory-only statements). Each bullet MUST include at least one of:
-   - a **level** (e.g., Interest Income = X, Fixed Costs = Y)
+1) A **Driver Snapshot table** for the identified winner (or the key segment asked about), using *actual values* for the same month(s) wherever available. Wherever the dataset allows, the table should include:
+- Revenue (Interest Income, Loan_Amount_Disbursed)
+- Costs (Staff Costs, Technology Costs, Credit Risk Ops Cost, Regulatory Compliance Costs, Premises Overheads Cost, Interest Cost, Fixed Costs)
+- Pricing(Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct, Spread Percentage)
+
+- At least **3 time points** (e.g., current month, previous month, and the peak/trough month in the period) or **top 3 contributors** for that driver, so the user can see movement / ranking in numbers.
+2) Where helpful, you may add a **second small table** in Drivers / Analysis
+3) A short explanation (3–6 bullets max) interpreting the table(s) with **dataset evidence** (no theory-only statements). Each bullet MUST include at least one of:
+   - a **level** (e.g., Interest Income = X, Fixed Costs = Y, Spread Percentage = Z)
    - a **change** vs a prior period present in the dataset (MoM and/or Q3 2025 vs Q2 2025 when relevant)
    - a **comparison** (rank vs peers, or gap vs a benchmark such as Midlands Q3 2025 competition lending rate ≈ 0.05 when applicable)
 
