@@ -66,16 +66,19 @@
       .msg.bot h5, .msg.bot h6 { font-size: 0.95em; }
 
       /* Standard list styling (clean + readable) */
-      .msg.bot ul, .msg.bot ol {
-        padding-left: 1.15em;
+      /* Drivers / Analysis & other insights: clean "note" rows, not ugly bullets */
+      .msg.bot ul,
+      .msg.bot ol {
+        list-style: none;
+        padding-left: 0;
         margin: 8px 0;
       }
-      /* Render ordered lists as clean bullets to avoid ugly "1. 1. 1." look */
-      .msg.bot ul,
-      .msg.bot ol { list-style: disc; }
       .msg.bot li {
         margin: 4px 0;
-        padding: 0;
+        padding: 6px 10px;
+        border-left: 3px solid var(--perci-accent, #1f4fbf);
+        background: #f9fbff;
+        border-radius: 6px;
       }
       .msg.bot li strong { color:#0b1221; }
       .msg.bot li em { color: rgba(11,18,33,.78); }
@@ -1559,9 +1562,9 @@ CORE ANALYTICAL CAPABILITIES:
 - Interpret Spread Percentage using actual values already present in dataset
 - Low Lending rate is more attractive to the end customer, and High Borrowing rate is more expensive for the company.
 
-COMPETITION BENCHMARK (DEMO CONTEXT):
+COMPETITION BENCHMARK:
 - Competition Rate (Midlands, Q3 2025): Annual Lending Rate ≈ 0.05
-- If the user asks about competition/benchmarking or anything about the decline in Midlands Q3 2025, you must MANDATORILY compare the relevant Annual_Lending_Rate_Pct against 0.05 and quantify the gap (absolute and % where possible).
+- Whenever the user question mentions Midlands and Q3 2025 together (including growth, decline, slowdown, improvement, or competition), you MUST compare the relevant Annual_Lending_Rate_Pct against 0.05, quantify the gap (absolute and % where possible), and explicitly state whether the lending rate is above or below this market benchmark.
 
 5) Trend Analysis
 - Month-on-month movement
@@ -1610,7 +1613,7 @@ Use markdown headings exactly like this:
 - MUST include a compact table (preferred) with the key numbers
 - After the table, add 1–3 short sentences explaining what the numbers imply (why it matters)
 
-### Drivers / Analysis (NUMERIC, NOT THEORETICAL)
+### Drivers / Analysis
 MUST be a mix of:
 1) It should do a detailed analysis of the drivers of the revenue, costs and pricing.
 - Revenue (Interest Income, Loan_Amount_Disbursed)
@@ -1621,6 +1624,8 @@ MUST be a mix of:
 4) If the question is for Q3 Midlands 2025, it should MANDATORILY benchmark with the competition annual lending rate ≈ 0.05.
 5) It should be a mix of tables, text and bullet points.
 6) It should be concise and to the point.
+7) It should not have only theory, every statement should be backed by data from the dataset.
+8) This section should be the most detailed, analytical and comprehensive part of the answer with no room for generic theory.
 
 Do NOT include a “Recommendations” section unless the user explicitly requests recommendations.
 
