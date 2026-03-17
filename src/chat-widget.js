@@ -55,11 +55,44 @@
       }
       .msg.bot h1 { font-size: 1.3em; }
       .msg.bot h2 { font-size: 1.2em; }
-      .msg.bot h3 { font-size: 1.1em; }
+      .msg.bot h3 {
+        font-size: 0.95em;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: rgba(11,18,33,.78);
+        margin-top: 14px;
+      }
       .msg.bot h4 { font-size: 1em; }
       .msg.bot h5, .msg.bot h6 { font-size: 0.95em; }
-      .msg.bot ul, .msg.bot ol { padding-left: 20px; margin: 6px 0; }
-      .msg.bot li { margin: 4px 0; }
+
+      /* Make bullets look like professional "insight chips" */
+      .msg.bot ul, .msg.bot ol {
+        padding-left: 0;
+        margin: 8px 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .msg.bot li {
+        margin: 0;
+        padding: 8px 10px;
+        border: 1px solid #eef1f6;
+        border-radius: 10px;
+        background: #ffffff;
+        box-shadow: 0 1px 1px rgba(0,0,0,.02);
+      }
+      .msg.bot li strong { color:#0b1221; }
+      .msg.bot li em { color: rgba(11,18,33,.78); }
+      .msg.bot li::before{
+        content:"";
+        display:inline-block;
+        width:8px; height:8px;
+        border-radius:50%;
+        margin-right:8px;
+        background: linear-gradient(90deg, var(--perci-accent, #1f4fbf), var(--perci-accent2, #163a8a));
+        vertical-align: middle;
+      }
       .msg.bot table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 8px 0; overflow:hidden; border: 1px solid #e7eaf0; border-radius: 10px; background:#fff; }
       .msg.bot th, .msg.bot td { border-bottom: 1px solid #eef1f6; padding: 8px 10px; text-align: left; vertical-align: top; }
       .msg.bot thead th { background: #f3f6ff; border-bottom: 1px solid #e7eaf0; }
@@ -517,6 +550,18 @@ When responding, Keep it concise and executive-friendly.
           this._props.primaryColor || '#1f4fbf'
         }, ${this._props.primaryDark || '#163a8a'})`
       })
+
+      // Provide theme colors to CSS list markers etc.
+      try {
+        this._shadowRoot.host?.style?.setProperty(
+          '--perci-accent',
+          this._props.primaryColor || '#1f4fbf'
+        )
+        this._shadowRoot.host?.style?.setProperty(
+          '--perci-accent2',
+          this._props.primaryDark || '#163a8a'
+        )
+      } catch (e) {}
     }
 
     _escapeHtml (s = '') {
@@ -1426,7 +1471,7 @@ If the user asks “Which product has the highest operating profit” (or simila
 You MUST:
 1) Identify the top result using the **Operating Profit** measure (include **Product, Region, Company, Month, Value**)
 2) Show a ranked table (Top 3 if available)
-3) In “Drivers / Analysis”, include a numeric driver snapshot for the winner in the same month:
+3) In “Drivers / Analysis”, include a numeric driver snapshot for the winner in the same month and also provide some crisp summarization of the driver:
    - Interest Income
    - Interest Cost
    - Spread Percentage
@@ -1569,15 +1614,18 @@ Use markdown headings exactly like this:
 - must include a data-backed conclusion when possible
 
 ### Key Findings
-- bullets and/or a compact table
-- include actual values, contributors, comparisons, or rankings
+- MUST include a compact table (preferred) with the key numbers
+- After the table, add 1–3 short sentences explaining what the numbers imply (why it matters)
 
 ### Drivers / Analysis (NUMERIC, NOT THEORETICAL)
-For the identified winner (or the key segment asked about), include *actual values* for the same month(s) wherever available:
-- **Revenue / Income**: Interest Income (and Loan_Amount_Disbursed when relevant)
-- **Costs**: Interest Cost + Fixed Costs (and major cost lines if present)
-- **Pricing**: Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct, Spread Percentage
-- **Time trend**: call out the peak month(s) with values (or last 3 months trend if helpful)
+MUST be a mix of:
+1) A **Driver Snapshot table** for the identified winner (or the key segment asked about), using *actual values* for the same month(s) wherever available:
+   - Interest Income, Interest Cost
+   - Spread Percentage
+   - Fixed Costs
+   - Loan_Amount_Disbursed
+   - Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct
+2) A short explanation (2–5 bullets max) interpreting the table (no theory-only statements).
 
 Do NOT include a “Recommendations” section unless the user explicitly requests recommendations.
 
