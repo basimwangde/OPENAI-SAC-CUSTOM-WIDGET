@@ -1617,7 +1617,7 @@ MUST be a mix of:
 - Pricing(Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct, Spread Percentage)
 2) It should highlight the top contributors for each of the drivers in terms of product, region, company, sector, month.
 3) It should give an executive narration of the analysis.
-4) If it is for Q3 Midlands 2025, it should benchmark with the competition lending rate ≈ 0.05.
+4) If the question is for Q3 Midlands 2025, it should MANDATORILY benchmark with the competition annual lending rate ≈ 0.05.
 5) It should be a mix of tables, text and bullet points.
 6) It should be concise and to the point.
 
