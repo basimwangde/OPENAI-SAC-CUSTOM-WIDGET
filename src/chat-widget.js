@@ -1564,7 +1564,7 @@ CORE ANALYTICAL CAPABILITIES:
 
 COMPETITION BENCHMARK:
 - Competition Rate (Midlands, Q3 2025): Annual Lending Rate ≈ 0.05
-- Whenever the user question mentions Midlands and Q3 2025 together (including growth, decline, slowdown, improvement, or competition), you MUST compare the relevant Annual_Lending_Rate_Pct against 0.05, quantify the gap (absolute and % where possible), and explicitly state whether the lending rate is above or below this market benchmark.
+- Whenever the user question mentions Midlands and Q3 2025 together (including growth, decline, slowdown, improvement, or competition), you MUST compare the relevant Annual_Lending_Rate_Pct against 0.05, quantify the gap (absolute and % where possible), and explicitly state whether the lending rate is above or below this market benchmark. Also please mention the competition rate in the answer.
 
 5) Trend Analysis
 - Month-on-month movement
