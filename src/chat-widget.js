@@ -635,14 +635,19 @@ When responding, Keep it concise and executive-friendly.
             out.push(`<li class="li-item">${this._mdInline(itemText)}</li>`)
           }
         } else if (/^\s*\d+\.\s+/.test(line)) {
-          if (!inOl) {
+          const itemText = line.replace(/^\s*\d+\.\s+/, '')
+          // Treat numbered "1. **Revenue...:**" as section headers instead of an <ol> list
+          if (isSectionHeader(itemText)) {
             flush()
-            out.push('<ol>')
-            inOl = true
+            out.push(`<p class="li-head">${this._mdInline(itemText)}</p>`)
+          } else {
+            if (!inOl) {
+              flush()
+              out.push('<ol>')
+              inOl = true
+            }
+            out.push(`<li>${this._mdInline(itemText)}</li>`)
           }
-          out.push(
-            `<li>${this._mdInline(line.replace(/^\s*\d+\.\s+/, ''))}</li>`
-          )
         } else if (line.trim() === '') {
           flush()
           out.push('<br/>')
