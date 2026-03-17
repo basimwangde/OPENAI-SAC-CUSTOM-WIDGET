@@ -85,10 +85,12 @@
       }
 
       .msg.bot li.li-head {
-        padding: 7px 10px;
-        border-left: 3px solid var(--perci-accent2, #163a8a);
-        background: #ffffff;
-        border-radius: 6px;
+        margin-top: 10px;
+        margin-bottom: 2px;
+        padding: 0 2px;
+        border-left: none;
+        background: transparent;
+        border-radius: 0;
         font-weight: 700;
       }
       .msg.bot li.li-head > ul.li-sub {
@@ -96,8 +98,8 @@
         padding-left: 14px;
       }
       .msg.bot li.li-head > ul.li-sub > li.li-subitem {
-        background: #fff;
-        border-left-width: 2px;
+        background: #f9fbff;
+        border-left-width: 3px;
       }
       .msg.bot li strong { color:#0b1221; }
       .msg.bot li em { color: rgba(11,18,33,.78); }
