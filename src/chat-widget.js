@@ -115,7 +115,7 @@
       </div>
 
       <div class="footer">
-        <div class="muted" id="hint"></div>
+        <div class="muted" id="hint">AI can make mistakes. Please verify results.</div>
         <div class="muted"><a href="https://www.linkedin.com/company/percipere/" target="_blank" >Percipere Consulting</a></div>
       </div>
     </div>
