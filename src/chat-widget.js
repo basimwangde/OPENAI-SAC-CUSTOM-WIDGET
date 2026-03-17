@@ -66,19 +66,38 @@
       .msg.bot h5, .msg.bot h6 { font-size: 0.95em; }
 
       /* Standard list styling (clean + readable) */
-      /* Drivers / Analysis & other insights: clean "note" rows, not ugly bullets */
+      /* Drivers / Analysis & other insights: clean "note" rows with hierarchy */
       .msg.bot ul,
       .msg.bot ol {
         list-style: none;
         padding-left: 0;
         margin: 8px 0;
       }
-      .msg.bot li {
-        margin: 4px 0;
+      .msg.bot li { margin: 4px 0; }
+
+      .msg.bot li.li-item,
+      .msg.bot li.li-subitem,
+      .msg.bot ol > li {
         padding: 6px 10px;
         border-left: 3px solid var(--perci-accent, #1f4fbf);
         background: #f9fbff;
         border-radius: 6px;
+      }
+
+      .msg.bot li.li-head {
+        padding: 7px 10px;
+        border-left: 3px solid var(--perci-accent2, #163a8a);
+        background: #ffffff;
+        border-radius: 6px;
+        font-weight: 700;
+      }
+      .msg.bot li.li-head > ul.li-sub {
+        margin: 6px 0 0;
+        padding-left: 14px;
+      }
+      .msg.bot li.li-head > ul.li-sub > li.li-subitem {
+        background: #fff;
+        border-left-width: 2px;
       }
       .msg.bot li strong { color:#0b1221; }
       .msg.bot li em { color: rgba(11,18,33,.78); }
@@ -566,8 +585,13 @@ When responding, Keep it concise and executive-friendly.
       const out = []
       let inUl = false,
         inOl = false
+      let inSubList = false
 
       const flush = () => {
+        if (inSubList) {
+          out.push('</ul></li>')
+          inSubList = false
+        }
         if (inUl) {
           out.push('</ul>')
           inUl = false
@@ -578,6 +602,12 @@ When responding, Keep it concise and executive-friendly.
         }
       }
 
+      const isSectionHeader = txt => {
+        const t = String(txt || '').trim()
+        // Heuristic: short line ending with ":" (e.g., "Revenue:", "Costs:", "Pricing:")
+        return t.endsWith(':') && t.length > 1 && t.length <= 40
+      }
+
       for (const line of lines) {
         if (/^\s*[-*]\s+/.test(line)) {
           if (!inUl) {
@@ -585,9 +615,22 @@ When responding, Keep it concise and executive-friendly.
             out.push('<ul>')
             inUl = true
           }
-          out.push(
-            `<li>${this._mdInline(line.replace(/^\s*[-*]\s+/, ''))}</li>`
-          )
+          const itemText = line.replace(/^\s*[-*]\s+/, '')
+          if (isSectionHeader(itemText)) {
+            // Close any previous header's sublist before starting a new one
+            if (inSubList) {
+              out.push('</ul></li>')
+              inSubList = false
+            }
+            out.push(
+              `<li class="li-head">${this._mdInline(itemText)}<ul class="li-sub">`
+            )
+            inSubList = true
+          } else if (inSubList) {
+            out.push(`<li class="li-subitem">${this._mdInline(itemText)}</li>`)
+          } else {
+            out.push(`<li class="li-item">${this._mdInline(itemText)}</li>`)
+          }
         } else if (/^\s*\d+\.\s+/.test(line)) {
           if (!inOl) {
             flush()
