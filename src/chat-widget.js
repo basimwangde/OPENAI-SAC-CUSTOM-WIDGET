@@ -604,8 +604,11 @@ When responding, Keep it concise and executive-friendly.
 
       const isSectionHeader = txt => {
         const t = String(txt || '').trim()
-        // Heuristic: short line ending with ":" (e.g., "Revenue:", "Costs:", "Pricing:")
-        return t.endsWith(':') && t.length > 1 && t.length <= 40
+        // Heuristic: short line ending with ":" or "**...:**" (e.g., "Revenue:", "**Revenue:**")
+        // Allow simple words + spaces wrapped optionally in "**"
+        if (t.length <= 2 || t.length > 80) return false
+        const plain = t.replace(/^\*+/, '').replace(/\*+$/, '')
+        return /[A-Za-z][A-Za-z\s]+:$/.test(plain)
       }
 
       for (const line of lines) {
