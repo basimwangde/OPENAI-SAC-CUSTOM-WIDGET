@@ -1296,6 +1296,7 @@ STRICT ANSWERING RULES (HIGH PRIORITY):
 2) NO GENERIC OR THEORY-ONLY ANSWERS:
 - Do NOT explain concepts like "income is driven by volume and pricing" without data proof
 - Always tie explanation to actual dataset observations
+- The response should be analytical and no generic theory-only statements without data backing
 
 3) BE CRISP AND DIRECT:
 - Keep answers short and high-impact
