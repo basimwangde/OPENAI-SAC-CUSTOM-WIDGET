@@ -45,6 +45,16 @@
       .footer{display:flex; justify-content:space-between; align-items:center; padding:0 10px 10px}
 
       .msg.bot p { margin: 6px 0; }
+      .msg.bot h1, .msg.bot h2, .msg.bot h3, .msg.bot h4, .msg.bot h5, .msg.bot h6 {
+        margin: 12px 0 6px;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+      .msg.bot h1 { font-size: 1.3em; }
+      .msg.bot h2 { font-size: 1.2em; }
+      .msg.bot h3 { font-size: 1.1em; }
+      .msg.bot h4 { font-size: 1em; }
+      .msg.bot h5, .msg.bot h6 { font-size: 0.95em; }
       .msg.bot ul, .msg.bot ol { padding-left: 20px; margin: 6px 0; }
       .msg.bot li { margin: 4px 0; }
       .msg.bot table { border-collapse: collapse; width: 100%; margin: 6px 0; }
@@ -1424,6 +1434,7 @@ CORE ANALYTICAL CAPABILITIES:
 4) Pricing Analysis
 - Analyze Annual_Lending_Rate_Pct and Annual_Borrowing_Rate_Pct
 - Interpret Spread Percentage using actual values already present in dataset
+- Low Lending rate is more attractive to the end customer, and High Borrowing rate is more expensive for the company.
 
 5) Trend Analysis
 - Month-on-month movement
