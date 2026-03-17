@@ -27,6 +27,7 @@
         border-radius:12px;
         padding:10px;
         background:#f7f9fc;
+        user-select:text;
       }
       .msg{max-width:85%; margin:6px 0; padding:10px 12px; border-radius:14px; box-shadow:0 1px 2px rgba(0,0,0,.04)}
       .user{ margin-left:auto; }
@@ -34,6 +35,7 @@
       textarea{
         flex:1; resize:vertical; min-height:64px; max-height:220px;
         padding:10px 12px; border:1px solid #d0d3da; border-radius:12px; background:#fff; outline:none;
+        user-select:text;
       }
       textarea:focus{ border-color:#4d9aff; box-shadow:0 0 0 2px rgba(77,154,255,.15) }
       button{
@@ -44,6 +46,7 @@
       .muted{opacity:.7; font-size:12px}
       .footer{display:flex; justify-content:space-between; align-items:center; padding:0 10px 10px}
 
+      .msg.bot { line-height: 1.55; }
       .msg.bot p { margin: 6px 0; }
       .msg.bot h1, .msg.bot h2, .msg.bot h3, .msg.bot h4, .msg.bot h5, .msg.bot h6 {
         margin: 12px 0 6px;
@@ -57,10 +60,13 @@
       .msg.bot h5, .msg.bot h6 { font-size: 0.95em; }
       .msg.bot ul, .msg.bot ol { padding-left: 20px; margin: 6px 0; }
       .msg.bot li { margin: 4px 0; }
-      .msg.bot table { border-collapse: collapse; width: 100%; margin: 6px 0; }
-      .msg.bot th, .msg.bot td { border: 1px solid #e7eaf0; padding: 6px 8px; text-align: left; }
-      .msg.bot thead th { background: #f3f6ff; }
+      .msg.bot table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 8px 0; overflow:hidden; border: 1px solid #e7eaf0; border-radius: 10px; background:#fff; }
+      .msg.bot th, .msg.bot td { border-bottom: 1px solid #eef1f6; padding: 8px 10px; text-align: left; vertical-align: top; }
+      .msg.bot thead th { background: #f3f6ff; border-bottom: 1px solid #e7eaf0; }
+      .msg.bot tbody tr:last-child td { border-bottom: none; }
+      .msg.bot tbody tr:nth-child(even) td { background:#fbfcff; }
       .msg.bot code { background:#f1f3f7; padding:2px 4px; border-radius:4px; }
+      .msg.bot, .msg.user { user-select:text; }
             .msg.bot.typing{ display:inline-flex; align-items:center; gap:8px; }
       .typing .dots{ display:inline-flex; gap:4px; }
       .typing .dots span{
@@ -137,6 +143,15 @@
 
       this.$send.addEventListener('click', () => this._send())
       this.$clear.addEventListener('click', () => (this.$chat.innerHTML = ''))
+
+      // Enter submits; Shift+Enter adds a newline
+      this.$input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault()
+          // avoid submitting while send is disabled (e.g., while typing indicator is active)
+          if (!this.$send.disabled) this._send()
+        }
+      })
 
       this._props = {
         apiKey: '',
@@ -603,22 +618,72 @@ When responding, Keep it concise and executive-friendly.
     }
 
     _renderMarkdown (md = '') {
-      // Detect simple markdown blocks (headings, tables, lists) separated by blank lines
-      const blocks = md.split(/\n{2,}/)
-      const html = blocks
-        .map(b => {
-          // Headings (e.g. "# Title" / "### Subsection")
-          const heading = b.match(/^\s*(#{1,6})\s+(.*)$/)
-          if (heading) {
-            const level = Math.min(6, heading[1].length)
-            return `<h${level}>${this._mdInline(heading[2].trim())}</h${level}>`
-          }
+      const lines = String(md || '').replace(/\r\n/g, '\n').split('\n')
+      const out = []
 
-          const maybe = this._mdTable(b)
-          return maybe ? maybe : this._mdLists(b)
-        })
-        .join('\n')
-      return html
+      const isHeading = line => /^\s*#{1,6}\s+/.test(line)
+      const headingLevel = line => Math.min(6, (line.match(/^\s*(#{1,6})\s+/) || [])[1]?.length || 1)
+      const headingText = line => line.replace(/^\s*#{1,6}\s+/, '').trim()
+
+      const isTableSep = line => {
+        const t = String(line || '').trim()
+        if (!t.includes('|')) return false
+        const cells = t
+          .replace(/^\s*\|\s*/, '')
+          .replace(/\s*\|\s*$/, '')
+          .split('|')
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
+        return cells.length > 0 && cells.every(c => /^:?-{3,}:?$/.test(c))
+      }
+
+      const isTableHeader = line => String(line || '').includes('|')
+
+      let i = 0
+      while (i < lines.length) {
+        const line = lines[i]
+
+        // Skip extra blank lines
+        if (!String(line).trim()) {
+          i++
+          continue
+        }
+
+        // Headings
+        if (isHeading(line)) {
+          const lvl = headingLevel(line)
+          out.push(`<h${lvl}>${this._mdInline(headingText(line))}</h${lvl}>`)
+          i++
+          continue
+        }
+
+        // Tables (can appear mid-block after text)
+        if (isTableHeader(line) && isTableSep(lines[i + 1])) {
+          const tlines = [line, lines[i + 1]]
+          i += 2
+          while (i < lines.length && String(lines[i]).trim()) {
+            tlines.push(lines[i])
+            i++
+          }
+          const tableHtml = this._mdTable(tlines.join('\n'))
+          out.push(tableHtml || this._mdLists(tlines.join('\n')))
+          continue
+        }
+
+        // Paragraph/list chunk until next heading/table/blank
+        const chunk = []
+        while (i < lines.length) {
+          const cur = lines[i]
+          if (!String(cur).trim()) break
+          if (isHeading(cur)) break
+          if (isTableHeader(cur) && isTableSep(lines[i + 1])) break
+          chunk.push(cur)
+          i++
+        }
+        if (chunk.length) out.push(this._mdLists(chunk.join('\n')))
+      }
+
+      return out.join('\n')
     }
 
     _updateDatasetsUI () {
@@ -1353,6 +1418,28 @@ You MUST:
 If the dataset allows a quantitative answer, your response must include quantitative evidence.
 
 --------------------------------------------------
+
+OPERATING PROFIT RANKING MODE (STRICT):
+
+If the user asks “Which product has the highest operating profit” (or similar):
+
+You MUST:
+1) Identify the top result using the **Operating Profit** measure (include **Product, Region, Company, Month, Value**)
+2) Show a ranked table (Top 3 if available)
+3) In “Drivers / Analysis”, include a numeric driver snapshot for the winner in the same month:
+   - Interest Income
+   - Interest Cost
+   - Spread Percentage
+   - Fixed Costs
+   - Loan_Amount_Disbursed
+   - Annual_Lending_Rate_Pct and Annual_Borrowing_Rate_Pct
+
+If any driver measure is not present for that exact slice, say “Not in dataset for this slice” (do not guess).
+
+Use this table shape when possible:
+| Rank | Product | Region | Company | Month | Operating Profit |
+
+--------------------------------------------------
 INCOME DRIVER ANALYSIS (MANDATORY):
 
 --------------------------------------------------
@@ -1472,29 +1559,27 @@ Do NOT use charts.
 Do NOT suggest charts.
 
 --------------------------------------------------
-MANDATORY RESPONSE STRUCTURE:
+MANDATORY RESPONSE STRUCTURE (DEFAULT):
 
-Default structure:
+Use markdown headings exactly like this:
 
-1) Summary Insight
-- 2 to 3 lines
+### Summary Insight
+- 1 to 2 lines
 - direct answer to the user’s question
 - must include a data-backed conclusion when possible
 
-2) Key Findings
-- bullets or table
+### Key Findings
+- bullets and/or a compact table
 - include actual values, contributors, comparisons, or rankings
 
-3) Drivers / Analysis
-- Revenue
-- Costs
-- Pricing
-- Time trend
-- use actual values from dataset
+### Drivers / Analysis (NUMERIC, NOT THEORETICAL)
+For the identified winner (or the key segment asked about), include *actual values* for the same month(s) wherever available:
+- **Revenue / Income**: Interest Income (and Loan_Amount_Disbursed when relevant)
+- **Costs**: Interest Cost + Fixed Costs (and major cost lines if present)
+- **Pricing**: Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct, Spread Percentage
+- **Time trend**: call out the peak month(s) with values (or last 3 months trend if helpful)
 
-4) Recommendations
-- clear business actions
-- based on the observed data
+Do NOT include a “Recommendations” section unless the user explicitly requests recommendations.
 
 --------------------------------------------------
 TABLE RULE:
