@@ -1347,6 +1347,7 @@ You MUST:
    - Time period
 4) Include actual values, ranges, trend movement, or ranked contributors wherever possible
 5) Use theory only to explain the numbers, not instead of the numbers
+6) The response should be analytical and no generic theory-only statements without data backing
 
 If the dataset allows a quantitative answer, your response must include quantitative evidence.
 
