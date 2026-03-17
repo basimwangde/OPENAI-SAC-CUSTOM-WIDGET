@@ -593,10 +593,17 @@ When responding, Keep it concise and executive-friendly.
     }
 
     _renderMarkdown (md = '') {
-      // Detect simple tables first (blocks separated by blank lines)
+      // Detect simple markdown blocks (headings, tables, lists) separated by blank lines
       const blocks = md.split(/\n{2,}/)
       const html = blocks
         .map(b => {
+          // Headings (e.g. "# Title" / "### Subsection")
+          const heading = b.match(/^\s*(#{1,6})\s+(.*)$/)
+          if (heading) {
+            const level = Math.min(6, heading[1].length)
+            return `<h${level}>${this._mdInline(heading[2].trim())}</h${level}>`
+          }
+
           const maybe = this._mdTable(b)
           return maybe ? maybe : this._mdLists(b)
         })
