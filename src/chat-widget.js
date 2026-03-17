@@ -1626,19 +1626,15 @@ Use markdown headings exactly like this:
 
 ### Drivers / Analysis (NUMERIC, NOT THEORETICAL)
 MUST be a mix of:
-1) A **Driver Snapshot table** for the identified winner (or the key segment asked about), using *actual values* for the same month(s) wherever available. Wherever the dataset allows, the table should include:
+1) It should do a detailed analysis of the drivers of the revenue, costs and pricing.
 - Revenue (Interest Income, Loan_Amount_Disbursed)
 - Costs (Staff Costs, Technology Costs, Credit Risk Ops Cost, Regulatory Compliance Costs, Premises Overheads Cost, Interest Cost, Fixed Costs)
 - Pricing(Annual_Lending_Rate_Pct, Annual_Borrowing_Rate_Pct, Spread Percentage)
-
-- At least **3 time points** (e.g., current month, previous month, and the peak/trough month in the period) or **top 3 contributors** for that driver, so the user can see movement / ranking in numbers.
-2) Where helpful, you may add a **second small table** in Drivers / Analysis
-3) A short explanation (3–6 bullets max) interpreting the table(s) with **dataset evidence** (no theory-only statements). Each bullet MUST include at least one of:
-   - a **level** (e.g., Interest Income = X, Fixed Costs = Y, Spread Percentage = Z)
-   - a **change** vs a prior period present in the dataset (MoM and/or Q3 2025 vs Q2 2025 when relevant)
-   - a **comparison** (rank vs peers, or gap vs a benchmark such as Midlands Q3 2025 competition lending rate ≈ 0.05 when applicable)
-
-Drivers / Analysis should be **elaborative but crisp**: prioritize the 3–5 highest-impact numeric observations; avoid long prose.
+2) It should highlight the top contributors for each of the drivers in terms of product, region, company, sector, month.
+3) It should give an executive narration of the analysis.
+4) If it is for Q3 Midlands 2025, it should benchmark with the competition lending rate ≈ 0.05.
+5) It should be a mix of tables, text and bullet points.
+6) It should be concise and to the point.
 
 Do NOT include a “Recommendations” section unless the user explicitly requests recommendations.
 
