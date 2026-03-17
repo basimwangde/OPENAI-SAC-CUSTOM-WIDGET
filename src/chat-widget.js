@@ -70,8 +70,9 @@
         padding-left: 1.15em;
         margin: 8px 0;
       }
-      .msg.bot ul { list-style: disc; }
-      .msg.bot ol { list-style: decimal; }
+      /* Render ordered lists as clean bullets to avoid ugly "1. 1. 1." look */
+      .msg.bot ul,
+      .msg.bot ol { list-style: disc; }
       .msg.bot li {
         margin: 4px 0;
         padding: 0;
@@ -1560,7 +1561,7 @@ CORE ANALYTICAL CAPABILITIES:
 
 COMPETITION BENCHMARK (DEMO CONTEXT):
 - Competition Rate (Midlands, Q3 2025): Annual Lending Rate ≈ 0.05
-- If the user asks about competition/benchmarking or anything about the decline in Midlands Q3 2025, compare the relevant Annual_Lending_Rate_Pct against 0.05 and quantify the gap (absolute and % where possible).
+- If the user asks about competition/benchmarking or anything about the decline in Midlands Q3 2025, you must MANDATORILY compare the relevant Annual_Lending_Rate_Pct against 0.05 and quantify the gap (absolute and % where possible).
 
 5) Trend Analysis
 - Month-on-month movement
