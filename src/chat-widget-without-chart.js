@@ -1,532 +1,5 @@
 /* PerciBot — SAC Chat Widget (Analytic App push mode: receives datasets via setProperties) */
 ;(function () {
-
-  // ── CDN ───────────────────────────────────────────────────────────────────────
-  const CHARTJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
-
-  // ── Palette — Percipere-flavoured, vivid but professional ────────────────────
-  const PALETTE = [
-    '#3A86FF', // vivid blue        (primary)
-    '#FF6B6B', // coral red
-    '#06D6A0', // emerald green
-    '#FFD166', // amber yellow
-    '#8338EC', // electric violet
-    '#FF9F1C', // saffron orange
-    '#2EC4B6', // teal
-    '#E63946', // crimson
-    '#457B9D', // steel blue
-    '#A8DADC', // powder blue
-    '#C77DFF', // lavender purple
-    '#80B918', // lime green
-  ]
-
-  // ── Lazy CDN loader ───────────────────────────────────────────────────────────
-  let _chartJsPromise = null
-
-  function _loadChartJs () {
-    if (_chartJsPromise) return _chartJsPromise
-    if (window.Chart) { _chartJsPromise = Promise.resolve(window.Chart); return _chartJsPromise }
-
-    _chartJsPromise = new Promise((resolve, reject) => {
-      const s = document.createElement('script')
-      s.src   = CHARTJS_CDN
-      s.async = true
-      s.onload  = () => resolve(window.Chart)
-      s.onerror = () => reject(new Error('Failed to load Chart.js from CDN.'))
-      document.head.appendChild(s)
-    })
-    return _chartJsPromise
-  }
-
-  // ── Number formatting ─────────────────────────────────────────────────────────
-  function _fmt (n) {
-    const v = Number(n)
-    if (isNaN(v)) return String(n)
-    const abs = Math.abs(v)
-    if (abs >= 1e7)  return (v / 1e7).toFixed(2).replace(/\.?0+$/, '')  + ' Cr'
-    if (abs >= 1e6)  return (v / 1e6).toFixed(2).replace(/\.?0+$/, '')  + 'M'
-    if (abs >= 1e3)  return (v / 1e3).toFixed(1).replace(/\.?0+$/, '')  + 'K'
-    return v % 1 === 0 ? String(v) : v.toFixed(2)
-  }
-
-  // ── Column normalizer ─────────────────────────────────────────────────────────
-  function _norm (s) { return String(s || '').trim().toLowerCase() }
-
-  function _normaliseRows (rows, mapping) {
-    if (!rows || !rows.length) return { rows: [], mapping }
-    const sample = rows[0]
-    const colMap = {}
-    Object.keys(sample).forEach(k => { colMap[_norm(k)] = k })
-
-    const resolve = col => colMap[_norm(col)] || col
-
-    const normMapping = {
-      x:     resolve(mapping.x),
-      y:     (mapping.y || []).map(resolve),
-      color: mapping.color ? resolve(mapping.color) : null,
-    }
-
-    return { rows, mapping: normMapping }
-  }
-
-  // ── Pivot rows into Chart.js datasets ─────────────────────────────────────────
-  function _buildDatasets (rows, mapping) {
-    const { x: xCol, y: yCols, color: colorCol } = mapping
-
-    // Case A: no grouping
-    if (!colorCol || !rows.some(r => r[colorCol] !== undefined)) {
-      const labels = rows.map(r => r[xCol])
-
-      const datasets = yCols.map((yCol, i) => ({
-        label:           yCol,
-        data:            rows.map(r => Number(r[yCol]) || 0),
-        backgroundColor: PALETTE[i % PALETTE.length],
-        borderColor:     PALETTE[i % PALETTE.length],
-        borderWidth:     2,
-      }))
-
-      return { labels, datasets }
-    }
-
-    // Case B: group by color column
-    const yCol = yCols[0]
-
-    const labelsOrdered = []
-    const labelSet      = new Set()
-    rows.forEach(r => {
-      const lbl = String(r[xCol])
-      if (!labelSet.has(lbl)) { labelsOrdered.push(lbl); labelSet.add(lbl) }
-    })
-
-    const groupsOrdered = []
-    const groupSet      = new Set()
-    rows.forEach(r => {
-      const g = String(r[colorCol])
-      if (!groupSet.has(g)) { groupsOrdered.push(g); groupSet.add(g) }
-    })
-
-    const datasets = groupsOrdered.map((group, i) => {
-      const groupRows = rows.filter(r => String(r[colorCol]) === group)
-      const lookup    = {}
-      groupRows.forEach(r => { lookup[String(r[xCol])] = Number(r[yCol]) || 0 })
-
-      return {
-        label:           group,
-        data:            labelsOrdered.map(lbl => lookup[lbl] ?? 0),
-        backgroundColor: PALETTE[i % PALETTE.length],
-        borderColor:     PALETTE[i % PALETTE.length],
-        borderWidth:     2,
-      }
-    })
-
-    return { labels: labelsOrdered, datasets }
-  }
-
-  // ── Common tooltip config ──────────────────────────────────────────────────────
-  function _tooltip () {
-    return {
-      callbacks: {
-        label (ctx) {
-          const val = ctx.parsed.y ?? ctx.parsed
-          return ` ${ctx.dataset.label}: ${_fmt(val)}`
-        },
-      },
-      backgroundColor: 'rgba(15,20,50,0.88)',
-      titleColor:      '#fff',
-      bodyColor:       '#d0d8f0',
-      borderColor:     'rgba(100,130,255,0.2)',
-      borderWidth:     1,
-      padding:         10,
-      cornerRadius:    8,
-      titleFont:       { weight: 'bold', size: 12 },
-      bodyFont:        { size: 12 },
-    }
-  }
-
-  // ── Axis tick formatters ───────────────────────────────────────────────────────
-  function _yTicks () {
-    return {
-      callback: v => _fmt(v),
-      color:    '#7a80a0',
-      font:     { size: 11 },
-    }
-  }
-
-  function _xTicks () {
-    return {
-      color: '#7a80a0',
-      font:  { size: 11 },
-      maxRotation: 40,
-      autoSkip:    true,
-      maxTicksLimit: 18,
-    }
-  }
-
-  // ── Chart builders ─────────────────────────────────────────────────────────────
-
-  function _buildBar (Chart, { labels, datasets }, spec) {
-    const ds = datasets.map(d => ({
-      ...d,
-      backgroundColor: d.backgroundColor + 'cc',
-      hoverBackgroundColor: d.backgroundColor,
-      borderRadius: 5,
-      borderSkipped: false,
-    }))
-
-    return {
-      type: 'bar',
-      data: { labels, datasets: ds },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend:  { position: 'top', labels: { color: '#4a5280', font: { size: 12 } } },
-          tooltip: _tooltip(),
-          title:   { display: !!spec.title, text: spec.title, color: '#1a1f36', font: { size: 14, weight: 'bold' } },
-        },
-        scales: {
-          x: {
-            grid:  { display: false },
-            ticks: _xTicks(),
-            title: {
-              display: !!spec.x_axis_title,
-              text:    spec.x_axis_title || '',
-              color:   '#7a80a0', font: { size: 11 },
-            },
-          },
-          y: {
-            grid:  { color: 'rgba(0,0,0,.05)' },
-            ticks: _yTicks(),
-            title: {
-              display: !!spec.y_axis_title,
-              text:    spec.y_axis_title || '',
-              color:   '#7a80a0', font: { size: 11 },
-            },
-          },
-        },
-        animation: { duration: 500, easing: 'easeOutQuart' },
-      },
-    }
-  }
-
-  function _buildLine (Chart, { labels, datasets }, spec) {
-    const ds = datasets.map(d => ({
-      ...d,
-      fill:        false,
-      tension:     0.35,
-      pointRadius: 4,
-      pointHoverRadius: 7,
-      pointBackgroundColor: d.borderColor,
-    }))
-
-    return {
-      type: 'line',
-      data: { labels, datasets: ds },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend:  { position: 'top', labels: { color: '#4a5280', font: { size: 12 } } },
-          tooltip: { ...(_tooltip()), mode: 'index', intersect: false },
-          title:   { display: !!spec.title, text: spec.title, color: '#1a1f36', font: { size: 14, weight: 'bold' } },
-        },
-        scales: {
-          x: {
-            grid:  { color: 'rgba(0,0,0,.04)' },
-            ticks: _xTicks(),
-            title: {
-              display: !!spec.x_axis_title,
-              text:    spec.x_axis_title || '',
-              color:   '#7a80a0', font: { size: 11 },
-            },
-          },
-          y: {
-            grid:  { color: 'rgba(0,0,0,.05)' },
-            ticks: _yTicks(),
-            title: {
-              display: !!spec.y_axis_title,
-              text:    spec.y_axis_title || '',
-              color:   '#7a80a0', font: { size: 11 },
-            },
-          },
-        },
-        hover:     { mode: 'index', intersect: false },
-        animation: { duration: 500, easing: 'easeOutQuart' },
-      },
-    }
-  }
-
-  function _buildArea (Chart, { labels, datasets }, spec) {
-    const ds = datasets.map((d, i) => ({
-      ...d,
-      fill:             true,
-      tension:          0.4,
-      backgroundColor:  PALETTE[i % PALETTE.length] + '30',
-      borderColor:      PALETTE[i % PALETTE.length],
-      pointRadius:      3,
-      pointHoverRadius: 6,
-    }))
-
-    return {
-      type: 'line',
-      data: { labels, datasets: ds },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend:  { position: 'top', labels: { color: '#4a5280', font: { size: 12 } } },
-          tooltip: { ...(_tooltip()), mode: 'index', intersect: false },
-          title:   { display: !!spec.title, text: spec.title, color: '#1a1f36', font: { size: 14, weight: 'bold' } },
-        },
-        scales: {
-          x: {
-            grid:  { display: false },
-            ticks: _xTicks(),
-            title: {
-              display: !!spec.x_axis_title,
-              text:    spec.x_axis_title || '',
-              color:   '#7a80a0', font: { size: 11 },
-            },
-          },
-          y: {
-            grid:  { color: 'rgba(0,0,0,.05)' },
-            ticks: _yTicks(),
-            title: {
-              display: !!spec.y_axis_title,
-              text:    spec.y_axis_title || '',
-              color:   '#7a80a0', font: { size: 11 },
-            },
-          },
-        },
-        hover:     { mode: 'index', intersect: false },
-        animation: { duration: 500, easing: 'easeOutQuart' },
-      },
-    }
-  }
-
-  function _buildPie (Chart, { labels, datasets }, spec) {
-    const values = datasets[0] ? datasets[0].data : []
-    const colors = labels.map((_, i) => PALETTE[i % PALETTE.length])
-
-    return {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data:                  values,
-          backgroundColor:       colors.map(c => c + 'cc'),
-          hoverBackgroundColor:  colors,
-          borderColor:           '#fff',
-          borderWidth:           2,
-          hoverOffset:           8,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'right',
-            labels:   {
-              color:     '#4a5280',
-              font:      { size: 12 },
-              padding:   14,
-              boxWidth:  14,
-              boxHeight: 14,
-            },
-          },
-          tooltip: {
-            callbacks: {
-              label (ctx) {
-                const total = ctx.dataset.data.reduce((a, b) => a + b, 0)
-                const pct   = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) + '%' : '–'
-                return ` ${ctx.label}: ${_fmt(ctx.parsed)} (${pct})`
-              },
-            },
-            backgroundColor: 'rgba(15,20,50,0.88)',
-            titleColor:      '#fff',
-            bodyColor:       '#d0d8f0',
-            borderColor:     'rgba(100,130,255,0.2)',
-            borderWidth:     1,
-            padding:         10,
-            cornerRadius:    8,
-          },
-          title: {
-            display: !!spec.title,
-            text:    spec.title,
-            color:   '#1a1f36',
-            font:    { size: 14, weight: 'bold' },
-            padding: { bottom: 16 },
-          },
-        },
-        animation: { animateRotate: true, duration: 600, easing: 'easeOutQuart' },
-        cutout:    '55%',
-      },
-    }
-  }
-
-  // ── Type router ───────────────────────────────────────────────────────────────
-  function _makeConfig (Chart, type, builtData, spec) {
-    switch (type) {
-      case 'bar':   return _buildBar(Chart, builtData, spec)
-      case 'line':  return _buildLine(Chart, builtData, spec)
-      case 'area':  return _buildArea(Chart, builtData, spec)
-      case 'pie':   return _buildPie(Chart, builtData, spec)
-      default:
-        throw new Error(`PerciBot chart-renderer: unsupported chart_type "${type}".`)
-    }
-  }
-
-  // ── Shimmer skeleton (shown while Chart.js CDN loads) ─────────────────────────
-  function _injectShimmer (container) {
-    container.innerHTML = `
-      <div style="
-        display:flex; flex-direction:column; align-items:center; justify-content:center;
-        gap:14px; padding:32px 20px; background:#f8f9fc; border-radius:10px; height:100%;
-      ">
-        <div style="
-          display:flex; align-items:flex-end; gap:6px; height:64px; width:80%;
-        ">
-          ${[40,70,55,90,65,45,80].map((h,i) => `
-            <div style="
-              flex:1; border-radius:4px 4px 0 0; height:${h}%;
-              background:linear-gradient(90deg,#e8ecf8 25%,#d0d6f0 50%,#e8ecf8 75%);
-              background-size:300% 100%;
-              animation:pbShimBar 1.4s ease-in-out infinite ${i * 0.1}s;
-            "></div>
-          `).join('')}
-        </div>
-        <style>
-          @keyframes pbShimBar {
-            0%,100% { opacity:.4 }
-            50%     { opacity:1  }
-          }
-        </style>
-      </div>
-    `
-  }
-
-  // ── Error display ─────────────────────────────────────────────────────────────
-  function _showError (container, msg) {
-    container.innerHTML = `
-      <div style="
-        display:flex; align-items:center; gap:8px; padding:10px 14px;
-        border-radius:9px; background:#fff7f7; border:1px solid #ffd5d5;
-        font-size:12px; color:#9b3030; font-family:inherit;
-      ">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor"
-            stroke-width="2" stroke-linecap="round">
-          <circle cx="10" cy="10" r="8"/>
-          <line x1="10" y1="6" x2="10" y2="10"/>
-          <circle cx="10" cy="14" r=".5" fill="currentColor"/>
-        </svg>
-        ${msg}
-      </div>
-    `
-  }
-
-  // ── Store Chart instances keyed by container ──────────────────────────────────
-  const _instances = new WeakMap()
-
-  // ── renderChart — public API ──────────────────────────────────────────────────
-  /**
-   * renderChart(container, chartData)
-   *
-   * @param {HTMLElement}  container — A div already appended to the DOM.
-   * @param {Object}       chartData — The chart_data object returned by the LLM.
-   *   Expected shape:
-   *   {
-   *     chart_type:    'bar' | 'line' | 'area' | 'pie',
-   *     title:         string (optional),
-   *     x_axis_title:  string (optional),
-   *     y_axis_title:  string (optional),
-   *     data_mapping:  { x: string, y: string[], color?: string | null },
-   *     rows:          Array<Record<string, any>>
-   *   }
-   *
-   * @returns {Promise<Chart|null>}
-   */
-  async function renderChart (container, chartData) {
-    if (!container || !chartData) return null
-
-    const { chart_type, data_mapping, rows } = chartData
-
-    if (!chart_type || !data_mapping || !rows || !rows.length) {
-      _showError(container, 'Chart data is incomplete or missing.')
-      return null
-    }
-
-    // Destroy previous chart on this container if any
-    const prev = _instances.get(container)
-    if (prev) { try { prev.destroy() } catch (_) {} }
-
-    // Show shimmer while CDN loads
-    _injectShimmer(container)
-
-    let Chart
-    try {
-      Chart = await _loadChartJs()
-    } catch (err) {
-      _showError(container, 'Could not load chart library. Check your network connection.')
-      return null
-    }
-
-    let normResult
-    try {
-      normResult = _normaliseRows(rows, data_mapping)
-    } catch (err) {
-      _showError(container, 'Failed to read chart data columns.')
-      return null
-    }
-
-    const { rows: normRows, mapping: normMapping } = normResult
-
-    let builtData
-    try {
-      builtData = _buildDatasets(normRows, normMapping)
-    } catch (err) {
-      _showError(container, `Chart data error: ${err.message}`)
-      return null
-    }
-
-    let config
-    try {
-      config = _makeConfig(Chart, chart_type, builtData, chartData)
-    } catch (err) {
-      _showError(container, err.message)
-      return null
-    }
-
-    // Clear shimmer, inject canvas
-    container.innerHTML = ''
-    const canvas = document.createElement('canvas')
-    canvas.style.cssText = 'display:block; width:100%; height:100%;'
-    container.appendChild(canvas)
-
-    let instance
-    try {
-      instance = new Chart(canvas, config)
-      _instances.set(container, instance)
-    } catch (err) {
-      _showError(container, `Chart render failed: ${err.message}`)
-      return null
-    }
-
-    return instance
-  }
-
-  /**
-   * destroyChart(container)
-   * Call this when removing the container from the DOM to prevent memory leaks.
-   */
-  function destroyChart (container) {
-    const inst = _instances.get(container)
-    if (inst) { try { inst.destroy() } catch (_) {} _instances.delete(container) }
-  }
-
-  // END OF CHART ENGINE
-  // =============================================================================
-
   const tpl = document.createElement('template')
   tpl.innerHTML = `
     <style>
@@ -544,11 +17,11 @@
         flex-direction:column;
         gap:10px;
         padding:10px;
-        min-height:0;
+        min-height:0;  /* important for flex scrolling */
       }
       .panel{
         flex:1;
-        overflow-y:auto;
+        overflow-y:auto;   /* only vertical scrolling */
         overflow-x:hidden;
         border:1px solid #e7eaf0;
         border-radius:12px;
@@ -592,6 +65,8 @@
       .msg.bot h4 { font-size: 1em; }
       .msg.bot h5, .msg.bot h6 { font-size: 0.95em; }
 
+      /* Standard list styling (clean + readable) */
+      /* Drivers / Analysis & other insights: clean "note" rows with hierarchy */
       .msg.bot ul,
       .msg.bot ol {
         list-style: none;
@@ -635,8 +110,7 @@
       .msg.bot tbody tr:nth-child(even) td { background:#fbfcff; }
       .msg.bot code { background:#f1f3f7; padding:2px 4px; border-radius:4px; }
       .msg.bot, .msg.user { user-select:text; }
-
-      .msg.bot.typing{ display:inline-flex; align-items:center; gap:8px; }
+            .msg.bot.typing{ display:inline-flex; align-items:center; gap:8px; }
       .typing .dots{ display:inline-flex; gap:4px; }
       .typing .dots span{
         width:6px; height:6px; border-radius:50%;
@@ -652,35 +126,7 @@
         100%{ opacity:.2; transform:translateY(0) }
       }
 
-      /* ── Chart card styles (ported from production widget) ── */
-      .chartCard {
-        margin-top:10px; border-radius:14px; overflow:hidden;
-        border:1px solid #e3e6f0; background:#fff;
-        box-shadow:0 2px 12px rgba(0,0,0,.06);
-      }
-      .chartCanvas {
-        display:block; width:100%; height:320px;
-        padding:16px 16px 10px;
-        box-sizing:border-box;
-        background:#fff;
-      }
-      .chartFooter {
-        display:flex; align-items:center; justify-content:space-between;
-        padding:7px 12px; background:#f8f9fc; border-top:1px solid #e9ecf5;
-        font-size:11.5px; color:#7a80a0;
-      }
-      .chartFooter .cfName {
-        font-weight:600; color:#4a5280;
-        max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-      }
-      .chartErr {
-        display:flex; align-items:center; gap:7px;
-        margin-top:8px; padding:7px 11px; border-radius:9px;
-        background:#fff7f7; border:1px solid #ffd5d5; font-size:12px; color:#9b3030;
-      }
-      .chartErr svg { width:14px; height:14px; flex-shrink:0; color:#c94040 }
-
-      header{ position:relative; }
+            header{ position:relative; } /* anchor for drawer */
       .chip{ cursor:pointer; }
 
       #dsDrawer{
@@ -695,12 +141,14 @@
 
       .panel { position:relative; }
       .msg.bot.typing{ position:sticky; bottom:0; }
+
     </style>
     <div class="wrap">
       <header>
         <div class="brand">PerciBOT</div>
         <div class="chip" id="modelChip"></div>
         <div id="dsDrawer"></div>
+
       </header>
 
       <div class="body">
@@ -717,7 +165,7 @@
 
       <div class="footer">
         <div class="muted" id="hint">AI can make mistakes. Please verify results.</div>
-        <div class="muted"><a href="https://www.linkedin.com/company/percipere/" target="_blank">Percipere Consulting</a></div>
+        <div class="muted"><a href="https://www.linkedin.com/company/percipere/" target="_blank" >Percipere Consulting</a></div>
       </div>
     </div>
   `
@@ -729,19 +177,21 @@
       this._shadowRoot.appendChild(tpl.content.cloneNode(true))
       this.$ = id => this._shadowRoot.getElementById(id)
 
-      this.$chat      = this.$('chat')
-      this.$input     = this.$('input')
-      this.$send      = this.$('send')
-      this.$clear     = this.$('clear')
+      this.$chat = this.$('chat')
+      this.$input = this.$('input')
+      this.$send = this.$('send')
+      this.$clear = this.$('clear')
       this.$modelChip = this.$('modelChip')
-      this.$hint      = this.$('hint')
+      this.$hint = this.$('hint')
 
       this.$send.addEventListener('click', () => this._send())
       this.$clear.addEventListener('click', () => (this.$chat.innerHTML = ''))
 
+      // Enter submits; Shift+Enter adds a newline
       this.$input.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault()
+          // avoid submitting while send is disabled (e.g., while typing indicator is active)
           if (!this.$send.disabled) this._send()
         }
       })
@@ -751,18 +201,18 @@
         model: 'gpt-3.5-turbo',
         systemPrompt:
           'You are PerciBOT, a helpful and concise assistant for SAP Analytics Cloud.',
-        welcomeText: 'Hello, I\u2019m PerciBOT! How can I assist you?',
-        datasets: '',
+        welcomeText: 'Hello, I’m PerciBOT! How can I assist you?',
+        datasets: '', // JSON string pushed from Analytic App: { Sales:{schema:[],rows:[]}, ... }
         // theme
         primaryColor: '#1f4fbf',
         primaryDark: '#163a8a',
         surfaceColor: '#ffffff',
         surfaceAlt: '#f6f8ff',
         textColor: '#0b1221',
-        summaryPrompt: '',
+        summaryPrompt:'',
       }
-      this.summaryResponse = 'Test'
-      this._datasets = {}
+      this.summaryResponse = 'Test';
+      this._datasets = {} // parsed datasets
     }
 
     connectedCallback () {
@@ -792,13 +242,23 @@
         })
         this._datasets = rebuilt
         console.log('datasets', this._datasets)
+        const tag = Object.entries(this._datasets)
+          .map(([k, v]) => `${k}: ${v.rows?.length || 0} rows`)
+          .join(' · ')
+        // this.$modelChip.textContent = tag || 'AI Assistant'
+
         this._updateDatasetsUI()
 
+        // nice first-time nudge
         if (!this.$chat.innerHTML && Object.keys(this._datasets).length) {
-          this._append('bot', 'Datasets received. Ready to answer any analytical questions! ')
+          this._append(
+            'bot',
+            'Datasets received. Ready to answer any analytical questions! '
+          )
         }
       } catch (e) {
         this._datasets = {}
+        // this.$modelChip.textContent = 'AI Assistant'
         this._updateDatasetsUI()
       }
     }
@@ -809,11 +269,11 @@
 
       console.log('datasets', changedProps)
 
-      if (changedProps.summaryPrompt !== undefined) {
-        this._generateSummary(changedProps.summaryPrompt)
-        return
+      if(changedProps.summaryPrompt !== undefined) {
+        this._generateSummary(changedProps.summaryPrompt);
+        return;
       }
-
+      // Show API key hint
       this.$hint.textContent = this._props.apiKey
         ? 'AI can make mistakes. Please verify results.'
         : 'API key not set – open Builder to configure'
@@ -864,77 +324,113 @@
         this._updateDatasetsUI()
       }
 
+      // If first render and datasets exist, nudge the user
       if (!this.$chat.innerHTML) {
         if (this._props.welcomeText)
           this._append('bot', this._props.welcomeText)
       }
       if (this.$chat.innerHTML && Object.keys(this._datasets).length > 0) {
-        this._append('bot', 'Datasets received. Ready to answer any analytical questions!')
+        this._append(
+          'bot',
+          'Datasets received. Ready to answer any analytical questions!'
+        )
       }
     }
 
-    getLastSummary () {
-      console.log('[PerciBOT] getLastSummary invoked')
-      return this.summaryResponse ? String(this.summaryResponse) : ''
-    }
+    // Direct method SAC will call when JSON has no `body`
+  getLastSummary() {
+    // add a console marker so you can confirm it gets called
+    console.log("[PerciBOT] getLastSummary invoked");
+    // console.debug("[PerciBOT] getLastSummary invoked, waiting 10s...");
 
+    // // Block for 10 seconds
+    // const start = Date.now();
+    // while (Date.now() - start < 10000) {
+    //   // spin-wait (not elegant, but SAC expects sync return)
+    // }
+    return this.summaryResponse ? String(this.summaryResponse) : "";
+  }
+
+    // SAC will call this for custom methods defined in JSON
     onCustomWidgetRequest (methodName, params) {
       console.log('onCustomWidgetRequest', params)
-      if (methodName === 'setDatasets') {
-        console.log(params)
-        let payload = ''
-        if (typeof params === 'string') {
-          payload = params
-        } else if (Array.isArray(params)) {
-          payload = params[0] || ''
-        } else if (params && typeof params === 'object') {
-          payload = params.payload || ''
-        }
-
-        if (payload) this._applyDatasets(payload)
-      } else if (methodName === 'generateSummary') {
-        console.log(params)
-
-        let payload = ''
-        if (typeof params === 'string') {
-          payload = params
-        } else if (Array.isArray(params)) {
-          payload = params[0] || ''
-        } else if (params && typeof params === 'object') {
-          payload = params.payload || 'Generate a executive summary of the data in 3-4 sentences.'
-        }
-
-        this._generateSummary(payload)
-        return
+      if (methodName === 'setDatasets'){
+      console.log(params)
+      let payload = ''
+      if (typeof params === 'string') {
+        payload = params
+      } else if (Array.isArray(params)) {
+        // parameters listed in the JSON → SAC passes an array in that order
+        payload = params[0] || ''
+      } else if (params && typeof params === 'object') {
+        // some runtimes send a map
+        payload = params.payload || ''
       }
 
-      if (methodName === 'getLastSummary') {
-        return this.summaryResponse || ''
+      if (payload) this._applyDatasets(payload)
+      }else if (methodName === 'generateSummary'){
+        console.log(params)
+
+        let payload = ''
+      if (typeof params === 'string') {
+        payload = params
+      } else if (Array.isArray(params)) {
+        // parameters listed in the JSON → SAC passes an array in that order
+        payload = params[0] || ''
+      } else if (params && typeof params === 'object') {
+        // some runtimes send a map
+        payload = params.payload || 'Generate a executive summary of the data in 3-4 sentences.'
       }
+
+       this._generateSummary(payload);
+      return;
     }
 
-    async _generateSummary (prompt) {
+    if (methodName === 'getLastSummary') {
+    // must synchronously return a string
+    return this.summaryResponse || '';
+  }
+  }
+
+     async _generateSummary(prompt){
+      
       const q = (prompt || '').trim()
       if (!q) return
       this._append('user', q)
       this.$input.value = ''
 
       if (!this._props.apiKey) {
-        this._append('bot', '⚠️ API key not set. Open the Builder panel to configure.')
+        this._append(
+          'bot',
+          '⚠️ API key not set. Open the Builder panel to configure.'
+        )
         return
       }
 
+      // show typing indicator + lock UI
       this._startTyping()
       this.$send.disabled = true
 
       try {
+        // Build dataset context (schema + small preview)
         const dsContext = this._buildDatasetContext({
           maxRowsPerSet: 500,
           maxCharsTotal: 8000
         })
 
+
+        
         const system = [
-                    `
+          // this._props.systemPrompt ||
+          //   'You are PerciBOT, a helpful and concise assistant for SAP Analytics Cloud.',
+          // '',
+          // dsContext,
+          // '',
+          // 'When responding, Keep it concise and executive-friendly.'
+          
+
+
+          `
 You are **PerciBOT**, a conversational AI for analytics.
 
 Your role is to answer user queries about financial performance across Companies, Branches, Products, and Accounts (Revenue, Opex, Interest Expense).
@@ -1001,9 +497,12 @@ Branch × Product:
 
 When responding, Keep it concise and executive-friendly.
 `
+
         ].join('\n')
 
         console.log(system)
+
+        // return;
 
         const body = {
           model: this._props.model || 'gpt-3.5-turbo',
@@ -1030,27 +529,28 @@ When responding, Keep it concise and executive-friendly.
 
         const data = await res.json()
         const ans = data.choices?.[0]?.message?.content || '(No content)'
-        this.summaryResponse = ans
-        return ans
-      } catch (e) {
+        this.summaryResponse = ans;
+        return ans;
+      }catch (e) {
         this._stopTyping()
         this._append('bot', ` ${e.message}`)
-      }
+        
     }
+  }
 
     setProperties (props) {
       this.onCustomWidgetAfterUpdate(props)
-    }
+    } // SAC older runtimes
 
     _applyTheme () {
-      const wrap    = this._shadowRoot.querySelector('.wrap')
-      const header  = this._shadowRoot.querySelector('header')
-      const panel   = this._shadowRoot.querySelector('.panel')
+      const wrap = this._shadowRoot.querySelector('.wrap')
+      const header = this._shadowRoot.querySelector('header')
+      const panel = this._shadowRoot.querySelector('.panel')
       const buttons = this._shadowRoot.querySelectorAll('button.primary')
 
-      wrap.style.background   = this._props.surfaceColor || '#ffffff'
-      wrap.style.color        = this._props.textColor || '#0b1221'
-      panel.style.background  = this._props.surfaceAlt || '#f6f8ff'
+      wrap.style.background = this._props.surfaceColor || '#ffffff'
+      wrap.style.color = this._props.textColor || '#0b1221'
+      panel.style.background = this._props.surfaceAlt || '#f6f8ff'
       header.style.background = `linear-gradient(90deg, ${
         this._props.primaryColor || '#1f4fbf'
       }, ${this._props.primaryDark || '#163a8a'})`
@@ -1061,9 +561,16 @@ When responding, Keep it concise and executive-friendly.
         }, ${this._props.primaryDark || '#163a8a'})`
       })
 
+      // Provide theme colors to CSS list markers etc.
       try {
-        this._shadowRoot.host?.style?.setProperty('--perci-accent',  this._props.primaryColor || '#1f4fbf')
-        this._shadowRoot.host?.style?.setProperty('--perci-accent2', this._props.primaryDark  || '#163a8a')
+        this._shadowRoot.host?.style?.setProperty(
+          '--perci-accent',
+          this._props.primaryColor || '#1f4fbf'
+        )
+        this._shadowRoot.host?.style?.setProperty(
+          '--perci-accent2',
+          this._props.primaryDark || '#163a8a'
+        )
       } catch (e) {}
     }
 
@@ -1075,18 +582,32 @@ When responding, Keep it concise and executive-friendly.
     }
 
     _mdLists (md) {
+      // Convert contiguous lines of "-" or "*" to <ul>
       const lines = md.split('\n')
-      const out   = []
-      let inUl = false, inOl = false, inSubList = false
+      const out = []
+      let inUl = false,
+        inOl = false
+      let inSubList = false
 
       const flush = () => {
-        if (inSubList) { out.push('</ul></li>'); inSubList = false }
-        if (inUl)      { out.push('</ul>');      inUl      = false }
-        if (inOl)      { out.push('</ol>');      inOl      = false }
+        if (inSubList) {
+          out.push('</ul></li>')
+          inSubList = false
+        }
+        if (inUl) {
+          out.push('</ul>')
+          inUl = false
+        }
+        if (inOl) {
+          out.push('</ol>')
+          inOl = false
+        }
       }
 
       const isSectionHeader = txt => {
         const t = String(txt || '').trim()
+        // Heuristic: short line ending with ":" or "**...:**" (e.g., "Revenue:", "**Revenue:**")
+        // Allow simple words + spaces wrapped optionally in "**"
         if (t.length <= 2 || t.length > 80) return false
         const plain = t.replace(/^\*+/, '').replace(/\*+$/, '')
         return /[A-Za-z][A-Za-z\s]+:$/.test(plain)
@@ -1094,11 +615,21 @@ When responding, Keep it concise and executive-friendly.
 
       for (const line of lines) {
         if (/^\s*[-*]\s+/.test(line)) {
-          if (!inUl) { flush(); out.push('<ul>'); inUl = true }
+          if (!inUl) {
+            flush()
+            out.push('<ul>')
+            inUl = true
+          }
           const itemText = line.replace(/^\s*[-*]\s+/, '')
           if (isSectionHeader(itemText)) {
-            if (inSubList) { out.push('</ul></li>'); inSubList = false }
-            out.push(`<li class="li-head">${this._mdInline(itemText)}<ul class="li-sub">`)
+            // Close any previous header's sublist before starting a new one
+            if (inSubList) {
+              out.push('</ul></li>')
+              inSubList = false
+            }
+            out.push(
+              `<li class="li-head">${this._mdInline(itemText)}<ul class="li-sub">`
+            )
             inSubList = true
           } else if (inSubList) {
             out.push(`<li class="li-subitem">${this._mdInline(itemText)}</li>`)
@@ -1107,11 +638,16 @@ When responding, Keep it concise and executive-friendly.
           }
         } else if (/^\s*\d+\.\s+/.test(line)) {
           const itemText = line.replace(/^\s*\d+\.\s+/, '')
+          // Treat numbered "1. **Revenue...:**" as section headers instead of an <ol> list
           if (isSectionHeader(itemText)) {
             flush()
             out.push(`<p class="li-head">${this._mdInline(itemText)}</p>`)
           } else {
-            if (!inOl) { flush(); out.push('<ol>'); inOl = true }
+            if (!inOl) {
+              flush()
+              out.push('<ol>')
+              inOl = true
+            }
             out.push(`<li>${this._mdInline(itemText)}</li>`)
           }
         } else if (line.trim() === '') {
@@ -1127,6 +663,7 @@ When responding, Keep it concise and executive-friendly.
     }
 
     _mdTable (block) {
+      // Normalize: trim, then remove leading/trailing pipes on each line
       const raw = block.trim().split('\n').filter(Boolean)
       if (raw.length < 2) return null
 
@@ -1134,23 +671,32 @@ When responding, Keep it concise and executive-friendly.
         line.replace(/^\s*\|\s*/, '').replace(/\s*\|\s*$/, '')
       )
 
+      // Separator row must be --- (optionally with :) in each cell
       const sepCells = norm[1].split('|').map(s => s.trim())
-      const sepOk = sepCells.length > 0 && sepCells.every(c => /^:?-{3,}:?$/.test(c))
+      const sepOk =
+        sepCells.length > 0 && sepCells.every(c => /^:?-{3,}:?$/.test(c))
       if (!sepOk) return null
 
       const toCells = line =>
-        line.split('|').map(c => c.trim()).filter(c => c.length > 0).map(c => this._mdInline(c))
+        line
+          .split('|')
+          .map(c => c.trim())
+          .filter(c => c.length > 0) // drop empties from edge pipes
+          .map(c => this._mdInline(c))
 
-      const head     = toCells(norm[0])
+      const head = toCells(norm[0])
       const bodyRows = norm.slice(2).map(toCells)
 
       const ths = head.map(h => `<th>${h}</th>`).join('')
-      const trs = bodyRows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')
+      const trs = bodyRows
+        .map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`)
+        .join('')
 
       return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`
     }
 
     _mdInline (s) {
+      // Escape, then apply inline markdown
       let t = this._escapeHtml(s)
       t = t.replace(/`([^`]+)`/g, '<code>$1</code>')
       t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -1160,17 +706,21 @@ When responding, Keep it concise and executive-friendly.
 
     _renderMarkdown (md = '') {
       const lines = String(md || '').replace(/\r\n/g, '\n').split('\n')
-      const out   = []
+      const out = []
 
-      const isHeading    = line => /^\s*#{1,6}\s+/.test(line)
+      const isHeading = line => /^\s*#{1,6}\s+/.test(line)
       const headingLevel = line => Math.min(6, (line.match(/^\s*(#{1,6})\s+/) || [])[1]?.length || 1)
-      const headingText  = line => line.replace(/^\s*#{1,6}\s+/, '').trim()
+      const headingText = line => line.replace(/^\s*#{1,6}\s+/, '').trim()
 
       const isTableSep = line => {
         const t = String(line || '').trim()
         if (!t.includes('|')) return false
-        const cells = t.replace(/^\s*\|\s*/, '').replace(/\s*\|\s*$/, '')
-          .split('|').map(s => s.trim()).filter(s => s.length > 0)
+        const cells = t
+          .replace(/^\s*\|\s*/, '')
+          .replace(/\s*\|\s*$/, '')
+          .split('|')
+          .map(s => s.trim())
+          .filter(s => s.length > 0)
         return cells.length > 0 && cells.every(c => /^:?-{3,}:?$/.test(c))
       }
 
@@ -1180,8 +730,13 @@ When responding, Keep it concise and executive-friendly.
       while (i < lines.length) {
         const line = lines[i]
 
-        if (!String(line).trim()) { i++; continue }
+        // Skip extra blank lines
+        if (!String(line).trim()) {
+          i++
+          continue
+        }
 
+        // Headings
         if (isHeading(line)) {
           const lvl = headingLevel(line)
           out.push(`<h${lvl}>${this._mdInline(headingText(line))}</h${lvl}>`)
@@ -1189,15 +744,20 @@ When responding, Keep it concise and executive-friendly.
           continue
         }
 
+        // Tables (can appear mid-block after text)
         if (isTableHeader(line) && isTableSep(lines[i + 1])) {
           const tlines = [line, lines[i + 1]]
           i += 2
-          while (i < lines.length && String(lines[i]).trim()) { tlines.push(lines[i]); i++ }
+          while (i < lines.length && String(lines[i]).trim()) {
+            tlines.push(lines[i])
+            i++
+          }
           const tableHtml = this._mdTable(tlines.join('\n'))
           out.push(tableHtml || this._mdLists(tlines.join('\n')))
           continue
         }
 
+        // Paragraph/list chunk until next heading/table/blank
         const chunk = []
         while (i < lines.length) {
           const cur = lines[i]
@@ -1214,112 +774,78 @@ When responding, Keep it concise and executive-friendly.
     }
 
     _updateDatasetsUI () {
-      const chip    = this.$modelChip
-      const drawer  = this._shadowRoot.getElementById('dsDrawer')
+      const chip = this.$modelChip
+      const drawer = this._shadowRoot.getElementById('dsDrawer')
       const entries = Object.entries(this._datasets || {})
       if (!entries.length) {
-        chip.textContent    = 'AI Assistant'
+        chip.textContent = 'AI Assistant'
         drawer.style.display = 'none'
         return
       }
 
+      // Chip text
       const parts = entries.map(([k, v]) => `${k}: ${v.rows?.length || 0} rows`)
-      chip.textContent = parts.length > 2
-        ? `${parts.slice(0, 2).join(' · ')} · +${parts.length - 2} more`
-        : parts.join(' · ')
+      chip.textContent =
+        parts.length > 2
+          ? `${parts.slice(0, 2).join(' · ')} · +${parts.length - 2} more`
+          : parts.join(' · ')
 
-      const html = entries.map(([name, ds]) => {
-        const cols = (ds.schema || []).slice(0, 12).join(', ')
-        return `<div class="ds"><div class="name">${name}</div><div>${ds.rows?.length || 0} rows</div><div>${cols}</div></div>`
-      }).join('') || '<div class="ds">No datasets</div>'
+      // Drawer content
+      const html =
+        entries
+          .map(([name, ds]) => {
+            const cols = (ds.schema || []).slice(0, 12).join(', ')
+            return `<div class="ds"><div class="name">${name}</div><div>${
+              ds.rows?.length || 0
+            } rows</div><div>${cols}</div></div>`
+          })
+          .join('') || '<div class="ds">No datasets</div>'
       drawer.innerHTML = html
     }
 
-    // ── Render a bot response that may contain chart_data ────────────────────────
-    _renderBotResponse (data) {
-      const answerText = (data.answer && data.answer.trim())
-        ? data.answer
-        : (data.message || '(No response received)')
-
-      const b = document.createElement('div')
-      b.className = 'msg bot'
-      b.style.background = '#ffffff'
-      b.style.border     = '1px solid #e7eaf0'
-      b.style.color      = this._props.textColor || '#0b1221'
-
-      const textWrap = document.createElement('div')
-      textWrap.innerHTML = this._renderMarkdown(String(answerText))
-      b.appendChild(textWrap)
-
-      if (data.chart_data && typeof data.chart_data === 'object') {
-        const card = document.createElement('div')
-        card.className = 'chartCard'
-
-        const canvasWrap = document.createElement('div')
-        canvasWrap.className = 'chartCanvas'
-        card.appendChild(canvasWrap)
-
-        const footer = document.createElement('div')
-        footer.className = 'chartFooter'
-        footer.innerHTML = `<span class="cfName">${this._escapeHtml(data.chart_data.title || 'Chart')}</span>`
-        card.appendChild(footer)
-
-        b.appendChild(card)
-        this.$chat.appendChild(b)
-        this.$chat.scrollTop = this.$chat.scrollHeight
-
-        renderChart(canvasWrap, data.chart_data)
-          .then(() => { this.$chat.scrollTop = this.$chat.scrollHeight })
-          .catch(err => {
-            canvasWrap.innerHTML = ''
-            const errEl = document.createElement('div')
-            errEl.className = 'chartErr'
-            errEl.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round">
-                <circle cx="10" cy="10" r="8"/><line x1="10" y1="6" x2="10" y2="10"/>
-                <circle cx="10" cy="14" r=".5" fill="currentColor"/>
-              </svg>${this._escapeHtml(err.message || 'Chart could not be rendered.')}`
-            canvasWrap.appendChild(errEl)
-            this.$chat.scrollTop = this.$chat.scrollHeight
-          })
-        return
-      }
-
-      this.$chat.appendChild(b)
-      this.$chat.scrollTop = this.$chat.scrollHeight
-    }
-
     _append (role, text) {
-      if (role === 'bot') {
-        // Use the richer bot-response renderer (without chart_data)
-        this._renderBotResponse({ answer: text })
-        return
+      const b = document.createElement('div')
+      b.className = `msg ${role === 'user' ? 'user' : 'bot'}`
+
+      // Render
+      if (role === 'user') {
+        b.textContent = text // keep user text literal
+      } else {
+        b.innerHTML = this._renderMarkdown(String(text || ''))
       }
 
-      const b = document.createElement('div')
-      b.className = 'msg user'
-      b.style.background = '#97cdf2ff'
-      b.style.border     = '1px solid #e7eaf0'
-      b.style.color      = this._props.textColor || '#0b1221'
-      b.textContent = text
+      if (role === 'user') {
+        b.style.background = '#97cdf2ff'
+        b.style.border = '1px solid #e7eaf0'
+        b.style.color = this._props.textColor || '#0b1221'
+      } else {
+        b.style.background = '#ffffff'
+        b.style.border = '1px solid #e7eaf0'
+        b.style.color = this._props.textColor || '#0b1221'
+      }
 
       this.$chat.appendChild(b)
       this.$chat.scrollTop = this.$chat.scrollHeight
     }
 
     _buildDatasetContext (opts = {}) {
-      const maxRowsPerSet  = Number(opts.maxRowsPerSet ?? 5)
-      const maxCharsTotal  = Number(opts.maxCharsTotal ?? 8000)
+      const maxRowsPerSet = Number(opts.maxRowsPerSet ?? 5)
+      const maxCharsTotal = Number(opts.maxCharsTotal ?? 8000)
 
       const lines = []
-      lines.push('You have access to the following datasets. Use ONLY these when answering analytics questions:')
+      lines.push(
+        'You have access to the following datasets. Use ONLY these when answering analytics questions:'
+      )
 
       const entries = Object.entries(this._datasets || {})
-      if (!entries.length) { lines.push('(No datasets provided.)'); return lines.join('\n') }
+      if (!entries.length) {
+        lines.push('(No datasets provided.)')
+        return lines.join('\n')
+      }
 
       for (const [name, ds] of entries) {
-        const schema  = (ds?.schema || []).join(', ')
-        const total   = ds?.rows?.length || 0
+        const schema = (ds?.schema || []).join(', ')
+        const total = ds?.rows?.length || 0
         const preview = (ds?.rows || []).slice(0, maxRowsPerSet)
 
         lines.push(`\n[DATASET] ${name}`)
@@ -1327,9 +853,13 @@ When responding, Keep it concise and executive-friendly.
         lines.push(`- Total Rows: ${total}`)
         if (preview.length) {
           lines.push(`- Preview (first ${preview.length} rows):`)
-          for (const row of preview) {
+          for (let i = 0; i < preview.length; i++) {
+            // safe, compact row print
+            const row = preview[i]
             const compact = Object.keys(row).reduce((acc, k) => {
-              let s = row[k] === null || row[k] === undefined ? '' : String(row[k])
+              const v = row[k]
+              // stringify lightly; trim long strings
+              let s = v === null || v === undefined ? '' : String(v)
               if (s.length > 120) s = s.slice(0, 117) + '...'
               acc[k] = s
               return acc
@@ -1337,34 +867,41 @@ When responding, Keep it concise and executive-friendly.
             lines.push(`  - ${JSON.stringify(compact)}`)
           }
         } else {
-          lines.push('- Preview: (no rows)')
+          lines.push(`- Preview: (no rows)`)
         }
 
+        // stop if we’re near the char budget
         if (lines.join('\n').length > maxCharsTotal) {
           lines.push('\n(Context truncated to stay within token limits.)')
           break
         }
       }
 
-      lines.push(`
+      
+
+      // a tiny instruction so the model behaves
+      lines.push(
+        `
         Guidelines:
        - Do the calculations only if the required answer is not directly available in the dataset.
        - Prefer conclusions implied by the dataset preview and schema.
-       - Be precise with column names; do not invent fields that aren't in the schema.
+       - Be precise with column names; do not invent fields that aren’t in the schema.
        - Always list the filters, thresholds, and assumptions you applied.
-      `.trim())
+      `.trim()
+      )
 
       return lines.join('\n')
     }
 
     _startTyping () {
-      if (this._typingEl) return
+      if (this._typingEl) return // avoid duplicates
       const b = document.createElement('div')
       b.className = 'msg bot typing'
       b.innerHTML = `<span class="muted">PerciBOT</span><span class="dots"><span></span><span></span><span></span></span>`
+      // style like bot bubble
       b.style.background = '#ffffff'
-      b.style.border     = '1px solid #e7eaf0'
-      b.style.color      = this._props.textColor || '#0b1221'
+      b.style.border = '1px solid #e7eaf0'
+      b.style.color = this._props.textColor || '#0b1221'
 
       this.$chat.appendChild(b)
       this.$chat.scrollTop = this.$chat.scrollHeight
@@ -1378,176 +915,36 @@ When responding, Keep it concise and executive-friendly.
       this._typingEl = null
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // ── HARDCODED KEYWORD CHARTS ─────────────────────────────────────────────
-    //
-    //  How to manage this section:
-    //  • Each entry in KEYWORD_CHARTS has:
-    //      keywords : array of lowercase strings — ALL must appear in the query
-    //      chart    : a standard Chart.js config object (type / data / options)
-    //  • Matching is case-insensitive and ignores punctuation (? ! . etc.)
-    //  • To ADD a new chart  → push a new { keywords, chart } object to the array
-    //  • To REMOVE a chart   → delete (or comment out) its object
-    //  • To EDIT a chart     → update the `chart` value in its entry
-    //
-    // ═══════════════════════════════════════════════════════════════════════════
-    _getKeywordChart (query) {
-      const KEYWORD_CHARTS = [
-
-        // ── Entry 1: Net Profit by Company across months ───────────────────────
-        {
-          keywords: ['net profit', 'month'],   // both must be present in the query
-          chart: {
-            type: 'line',
-            data: {
-              labels: [
-                'Jan 2025','Feb 2025','Mar 2025','Apr 2025',
-                'May 2025','Jun 2025','Jul 2025','Aug 2025',
-                'Sep 2025','Oct 2025','Nov 2025','Dec 2025'
-              ],
-              datasets: [{
-                label: 'Net Profit',
-                data: [
-                  90.896773, 201.693764, 181.473776, 122.455154,
-                  96.485071, 199.514449, 123.091777, 188.650076,
-                  106.412377, 183.989706, 273.411137, 275.682466
-                ],
-                borderColor:  '#3A86FF',
-                backgroundColor: '#3A86FF33',
-                borderWidth: 2,
-                fill: false,
-                tension: 0.3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: true, position: 'top' },
-                title:  { display: true, text: 'Bridgepoint Lending — Net Profit (Last 12 Months)' },
-              },
-              scales: {
-                x: { title: { display: true, text: 'Month' } },
-                y: { title: { display: true, text: 'Net Profit (£)' } }
-              }
-            }
-          }
-        },
-
-        // ── ADD MORE ENTRIES BELOW THIS LINE ──────────────────────────────────
-        // {
-        //   keywords: ['revenue', 'region'],
-        //   chart: { type: 'bar', data: { ... }, options: { ... } }
-        // },
-
-      ] // ── END OF KEYWORD_CHARTS ─────────────────────────────────────────────
-
-      // Normalise query: lowercase and strip punctuation
-      const norm = query.toLowerCase().replace(/[?!.,;:'"]/g, ' ')
-
-      for (const entry of KEYWORD_CHARTS) {
-        const matched = entry.keywords.every(kw => norm.includes(kw))
-        if (matched) return entry.chart
-      }
-      return null
-    }
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    // ── BACKDOOR PARSER ────────────────────────────────────────────────────────
-    //
-    //  Accepts inputs in these formats:
-    //
-    //  Format A — question before the sentinel (clean display on screen):
-    //    Give me the trend for revenue
-    //    [many blank lines / tabs]
-    //    AAAYYYZZZ{"type":"bar","data":{...},"options":{...}}AAAYYYZZZ
-    //
-    //  Format B — sentinel only (no visible question):
-    //    AAAYYYZZZ{"type":"bar","data":{...},"options":{...}}AAAYYYZZZ
-    //
-    //  Returns: { visibleQuestion: string|null, chartConfig: object } | null
-    //
-    _parseBackdoor (raw) {
-      const SENTINEL = 'AAAYYYZZZ'
-      const s = String(raw || '')
-
-      const startIdx = s.indexOf(SENTINEL)
-      if (startIdx === -1) return null                       // no backdoor found
-
-      const afterStart = s.indexOf(SENTINEL, startIdx + SENTINEL.length)
-      if (afterStart === -1) return null                     // no closing sentinel
-
-      // Everything between the two sentinels is the chart JSON
-      const jsonStr = s.slice(startIdx + SENTINEL.length, afterStart).trim()
-
-      let chartConfig
-      try {
-        chartConfig = JSON.parse(jsonStr)
-      } catch (_) {
-        return null                                          // malformed JSON
-      }
-
-      // Everything BEFORE the opening sentinel is the visible question
-      const before = s.slice(0, startIdx).trim()
-      const visibleQuestion = before.length > 0 ? before : null
-
-      return { visibleQuestion, chartConfig }
-    }
-    // ══════════════════════════════════════════════════════════════════════════
-
     async _send () {
-      const raw = this.$input.value || ''
-      if (!raw.trim()) return
-
+      const q = (this.$input.value || '').trim()
+      if (!q) return
+      this._append('user', q)
       this.$input.value = ''
 
-      // ── 1. Check for backdoor sentinel ──────────────────────────────────────
-      const backdoor = this._parseBackdoor(raw)
-      if (backdoor) {
-        // Show only the visible question on screen (not the JSON blob)
-        const displayText = backdoor.visibleQuestion || 'Show chart'
-        this._append('user', displayText)
-
-        this._startTyping()
-        await new Promise(r => setTimeout(r, 600))   // small fake "thinking" delay
-        this._stopTyping()
-
-        this._renderChartJsConfig(backdoor.chartConfig)
-        return
-      }
-
-      const q = raw.trim()
-
-      // ── 2. Check for keyword-triggered hardcoded charts ─────────────────────
-      const keywordChart = this._getKeywordChart(q)
-      if (keywordChart) {
-        this._append('user', q)
-        this._startTyping()
-        await new Promise(r => setTimeout(r, 600))
-        this._stopTyping()
-        this._renderChartJsConfig(keywordChart)
-        return
-      }
-
-      // ── 3. Normal LLM flow ──────────────────────────────────────────────────
-      this._append('user', q)
-
       if (!this._props.apiKey) {
-        this._append('bot', '⚠️ API key not set. Open the Builder panel to configure.')
+        this._append(
+          'bot',
+          '⚠️ API key not set. Open the Builder panel to configure.'
+        )
         return
       }
 
+      // show typing indicator + lock UI
       this._startTyping()
       this.$send.disabled = true
 
       try {
-        const dsContext = this._buildDatasetContext({ maxRowsPerSet: 500, maxCharsTotal: 8000 })
+        // Build dataset context (schema + small preview)
+        const dsContext = this._buildDatasetContext({
+          maxRowsPerSet: 500,
+          maxCharsTotal: 8000
+        })
 
-        this.system = ''
-        if (this._props.systemPrompt === 'SmartStream') {
-          this.system = [`You are PerciBOT, a financial Q&A assistant for SmartStream’s FY2026 Budget data (values in ₹).
+        this.system = '';
+       if(this._props.systemPrompt == 'SmartStream'){
+
+           this.system = [
+            `You are PerciBOT, a financial Q&A assistant for SmartStream’s FY2026 Budget data (values in ₹).
 Use this table directly to answer financial questions.
 
 Rules:
@@ -1609,9 +1006,13 @@ Example Prompts:
 - Give me breakdown of indirect costs
 - Which component contribute the highest to the indirect costs
 - Give me breakdown of indirect costs for C003.
-`].join('\n')
-        } else if (this._props.systemPrompt === 'Demo') {
-          this.system = [`You are PerciBOT – an AI-powered Lending Analytics and CFO Advisory Copilot.
+`
+          ].join('\n');
+        }
+
+        else if(this._props.systemPrompt == 'Demo'){
+          this.system = [
+            `You are PerciBOT – an AI-powered Lending Analytics and CFO Advisory Copilot.
 
 CURRENCY (STRICT):
 - Treat all monetary amounts as **GBP**.
@@ -2308,9 +1709,13 @@ BEHAVIOR:
 GOAL:
 
 Use <<DATASET>> to generate clear, business-focused, executive-level insights grounded in actual dataset values, not generic theory.
-`].join('\n')
-        } else if (this._props.systemPrompt === 'Sony') {
-          this.system = [`You are PerciBOT, a financial Q&A assistant for the Channel Performance Dataset.
+`].join('\n');
+        }
+
+        else if(this._props.systemPrompt == 'Sony'){
+
+          this.system = [ 
+            `You are PerciBOT, a financial Q&A assistant for the Channel Performance Dataset.
 All monetary values are ₹ million.
 Use ONLY the dataset provided. Do NOT assume or invent values.
 
@@ -3964,9 +3369,15 @@ YAY,Programming COST,Dec (2025),Budget,"-56.00"
 YAY,Programming COST,Jan (2026),Budget,"-54.98"
 YAY,Programming COST,Feb (2026),Budget,"-51.19"
 YAY,Programming COST,Mar (2026),Budget,"-52.03"
-`].join('\n')
-        } else if (this._props.systemPrompt === 'FUTUROOT') {
-          this.system = [`You are PerciBOT for Process Mining (Procure-to-Pay).
+`
+].join('\n');
+
+        }
+
+        else if( this._props.systemPrompt === 'FUTUROOT' ){
+
+          this.system = [
+            `You are PerciBOT for Process Mining (Procure-to-Pay).
 
 You are given:
 1) A synthetic P2P event log embedded below in TOON format.
@@ -4082,9 +3493,24 @@ P2P-010, Invoice Receipt, 2025-12-21T10:00:00, AP_3, 1000, VND-Kappa, PO-2010, I
 P2P-010, Post Invoice, 2025-12-21T10:10:00, AP_3, 1000, VND-Kappa, PO-2010, INV-9110, INR, 80000, , , 100, , , EA, NET30, Delhi, Post, , ,
 P2P-010, Clear Invoice (Payment), 2026-01-20T12:30:00, Treasury_1, 1000, VND-Kappa, PO-2010, INV-9110, INR, 80000, , , 100, , , EA, NET30, Delhi, Pay, , ,
 
-`].join('\n')
-        } else {
-          this.system = [`
+`
+          ].join('\n');
+        }
+
+        else{
+
+
+         this.system = [
+          // this._props.systemPrompt ||
+          //   'You are PerciBOT, a helpful and concise assistant for SAP Analytics Cloud.',
+          // '',
+          // dsContext,
+          // '',
+          // 'When responding, Keep it concise and executive-friendly.'
+          
+
+
+          `
 You are **PerciBOT**, a conversational AI for analytics.
 
 Your role is to answer user queries about financial performance across Companies, Branches, Products, and Accounts (Revenue, Opex, Interest Expense).
@@ -4150,10 +3576,16 @@ Branch × Product:
 - Pusa Road × MSME Loans → Revenue: 36,003.70, Opex: -182,032.36, Interest Expense: -245,910.70
 
 When responding, Keep it concise and executive-friendly.
-`].join('\n')
-        }
+`
 
+        ].join('\n')
+
+      }
+
+        
         console.log(this.system)
+
+        // return;
 
         const body = {
           model: this._props.model || 'gpt-3.5-turbo',
@@ -4179,79 +3611,15 @@ When responding, Keep it concise and executive-friendly.
         }
 
         const data = await res.json()
-        const ans  = data.choices?.[0]?.message?.content || '(No content)'
+        const ans = data.choices?.[0]?.message?.content || '(No content)'
         this._stopTyping()
-
-        // Try to parse structured { answer, chart_data } from LLM
-        let parsed = null
-        try {
-          const clean = ans.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
-          const candidate = JSON.parse(clean)
-          if (candidate && (candidate.answer !== undefined || candidate.chart_data !== undefined)) {
-            parsed = candidate
-          }
-        } catch (_) { /* plain text — that's fine */ }
-
-        if (parsed) {
-          this._renderBotResponse(parsed)
-        } else {
-          this._renderBotResponse({ answer: ans })
-        }
+        this._append('bot', ans)
       } catch (e) {
         this._stopTyping()
         this._append('bot', ` ${e.message}`)
       } finally {
         this.$send.disabled = false
       }
-    }
-
-    // ── Render a raw Chart.js config object directly (backdoor / keyword path) ─
-    // This accepts the full Chart.js { type, data, options } object directly,
-    // bypassing the renderChart() pipeline which expects our internal format.
-    _renderChartJsConfig (config) {
-      const b = document.createElement('div')
-      b.className = 'msg bot'
-      b.style.background = '#ffffff'
-      b.style.border     = '1px solid #e7eaf0'
-      b.style.color      = this._props.textColor || '#0b1221'
-
-      const card = document.createElement('div')
-      card.className = 'chartCard'
-
-      const canvasWrap = document.createElement('div')
-      canvasWrap.className = 'chartCanvas'
-      card.appendChild(canvasWrap)
-
-      const footer = document.createElement('div')
-      footer.className = 'chartFooter'
-      const titleText = config?.options?.plugins?.title?.text || config?.data?.datasets?.[0]?.label || 'Chart'
-      footer.innerHTML = `<span class="cfName">${this._escapeHtml(titleText)}</span>`
-      card.appendChild(footer)
-
-      b.appendChild(card)
-      this.$chat.appendChild(b)
-      this.$chat.scrollTop = this.$chat.scrollHeight
-
-      _loadChartJs().then(Chart => {
-        // Destroy any previous instance on this container
-        const prev = _instances.get(canvasWrap)
-        if (prev) { try { prev.destroy() } catch (_) {} }
-
-        canvasWrap.innerHTML = ''
-        const canvas = document.createElement('canvas')
-        canvas.style.cssText = 'display:block; width:100%; height:100%;'
-        canvasWrap.appendChild(canvas)
-
-        try {
-          const instance = new Chart(canvas, config)
-          _instances.set(canvasWrap, instance)
-        } catch (err) {
-          _showError(canvasWrap, `Chart render failed: ${err.message}`)
-        }
-        this.$chat.scrollTop = this.$chat.scrollHeight
-      }).catch(err => {
-        _showError(canvasWrap, 'Could not load chart library. Check your network connection.')
-      })
     }
   }
 
